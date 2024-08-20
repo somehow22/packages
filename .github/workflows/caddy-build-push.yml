@@ -1,0 +1,39 @@
+name: Build and Push caddy Docker Image
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+    
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Get Caddy version
+      id: caddy_version
+      run: |
+        CADDY_VERSION=$(docker run --rm caddy:2-alpine caddy version | cut -d ' ' -f 1)
+        echo "::set-output name=version::${CADDY_VERSION}"
+    
+    - name: Build and push
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository_owner }}/caddy:latest
+          ghcr.io/${{ github.repository_owner }}/caddy:2
+          ghcr.io/${{ github.repository_owner }}/caddy:2.${{ steps.caddy_version.outputs.version }}

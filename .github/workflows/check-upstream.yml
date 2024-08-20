@@ -1,0 +1,55 @@
+name: Check for Updates and Create PR
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run daily at 00:00 UTC
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  check-updates:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Get current Caddy version
+      id: current_version
+      run: |
+        CURRENT_VERSION=$(grep "FROM caddy:" Dockerfile | head -1 | cut -d ':' -f 2 | cut -d '-' -f 1)
+        echo "::set-output name=version::${CURRENT_VERSION}"
+
+    - name: Check latest Caddy version
+      id: latest_version
+      run: |
+        LATEST_VERSION=$(curl -s "https://api.github.com/repos/caddyserver/caddy/releases/latest" | jq -r .tag_name | sed 's/v//')
+        echo "::set-output name=version::${LATEST_VERSION}"
+
+    - name: Compare versions
+      id: compare
+      run: |
+        if [ "${{ steps.current_version.outputs.version }}" != "${{ steps.latest_version.outputs.version }}" ]; then
+          echo "::set-output name=update_available::true"
+        else
+          echo "::set-output name=update_available::false"
+        fi
+
+    - name: Update Dockerfile
+      if: steps.compare.outputs.update_available == 'true'
+      run: |
+        sed -i 's/FROM caddy:${{ steps.current_version.outputs.version }}/FROM caddy:${{ steps.latest_version.outputs.version }}/g' Dockerfile
+        sed -i 's/FROM caddy:${{ steps.current_version.outputs.version }}-alpine/FROM caddy:${{ steps.latest_version.outputs.version }}-alpine/g' Dockerfile
+
+    - name: Create Pull Request
+      if: steps.compare.outputs.update_available == 'true'
+      uses: peter-evans/create-pull-request@v3
+      with:
+        commit-message: Update Caddy to version ${{ steps.latest_version.outputs.version }}
+        title: Update Caddy to version ${{ steps.latest_version.outputs.version }}
+        body: |
+          This PR updates the Caddy version to ${{ steps.latest_version.outputs.version }}.
+          
+          Changes:
+          - Updated Dockerfile to use Caddy ${{ steps.latest_version.outputs.version }}
+          
+          Please review and merge if appropriate.
+        branch: update-caddy-version
+        base: main

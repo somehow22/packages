@@ -1,0 +1,26 @@
+{
+    order reverse_proxy before route
+    admin off
+
+    log {
+        output file /data/access.log
+        level INFO
+    }
+
+    servers :443 {
+        protocols h1 h2 h3
+    }
+}
+
+# Default server block serving files with browsing enabled
+:443 {
+    file_server {
+        root /usr/share/caddy
+        browse
+    }
+}
+
+# Reverse proxy for the specified domain
+xx.example.com {
+    reverse_proxy xx:3000
+}
