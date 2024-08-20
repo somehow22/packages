@@ -35,6 +35,8 @@ jobs:
       run: |
         CADDY_VERSION=$(docker run --rm caddy:2-alpine caddy version | cut -d ' ' -f 1)
         echo "version=${CADDY_VERSION}" >> $GITHUB_OUTPUT
+        echo "CADDY_VERSION=${CADDY_VERSION}" >> $GITHUB_ENV
+
     
     - name: Build and push
       uses: docker/build-push-action@v2
@@ -45,4 +47,4 @@ jobs:
         tags: |
           ghcr.io/${{ github.repository_owner }}/caddy:latest
           ghcr.io/${{ github.repository_owner }}/caddy:2
-          ghcr.io/${{ github.repository_owner }}/caddy:2.${CADDY_VERSION}
+          ghcr.io/${{ github.repository_owner }}/caddy:2.${{ env.CADDY_VERSION }}
