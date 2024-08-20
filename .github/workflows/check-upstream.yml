@@ -1,0 +1,58 @@
+name: Check for Updates and Create PR
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run daily at 00:00 UTC
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  check-updates:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+    - uses: actions/checkout@v6.0.2
+
+    - name: Get current Caddy version
+      id: current_version
+      run: |
+        CURRENT_VERSION=$(grep -E '^ARG CADDY_VERSION=' caddy/Dockerfile | head -1 | cut -d '=' -f2)
+        echo "version=${CURRENT_VERSION}" >> $GITHUB_OUTPUT
+
+    - name: Check latest Caddy version
+      id: latest_version
+      run: |
+        LATEST_VERSION=$(curl -fsSL "https://api.github.com/repos/caddyserver/caddy/releases/latest" | jq -r .tag_name | sed 's/v//')
+        echo "version=${LATEST_VERSION}" >> $GITHUB_OUTPUT
+
+    - name: Compare versions
+      id: compare
+      run: |
+        if [ "${{ steps.current_version.outputs.version }}" != "${{ steps.latest_version.outputs.version }}" ]; then
+          echo "update_available=true" >> $GITHUB_OUTPUT
+        else
+          echo "update_available=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Update Dockerfile
+      if: steps.compare.outputs.update_available == 'true'
+      run: |
+        sed -i "s/^ARG CADDY_VERSION=.*/ARG CADDY_VERSION=${{ steps.latest_version.outputs.version }}/" caddy/Dockerfile
+
+    - name: Create Pull Request
+      if: steps.compare.outputs.update_available == 'true'
+      uses: peter-evans/create-pull-request@v8.1.1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: Update Caddy to version ${{ steps.latest_version.outputs.version }}
+        title: Update Caddy to version ${{ steps.latest_version.outputs.version }}
+        body: |
+          This PR updates the Caddy version to ${{ steps.latest_version.outputs.version }}.
+          
+          Changes:
+          - Updated Dockerfile to use Caddy ${{ steps.latest_version.outputs.version }}
+          
+          Please review and merge if appropriate.
+        branch: update-caddy-version
+        base: main
