@@ -3,8 +3,13 @@ name: Build and Push Docker Image
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'caddy/Dockerfile'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'caddy/Dockerfile'
+  workflow_dispatch:  # Allow manual triggering
 
 jobs:
   build-and-push:
@@ -40,4 +45,4 @@ jobs:
         tags: |
           ghcr.io/${{ github.repository_owner }}/caddy:latest
           ghcr.io/${{ github.repository_owner }}/caddy:2
-          ghcr.io/${{ github.repository_owner }}/caddy:2.${{ steps.caddy_version.outputs.version }}
+          ghcr.io/${{ github.repository_owner }}/caddy:2.${CADDY_VERSION}
