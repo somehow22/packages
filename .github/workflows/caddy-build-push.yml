@@ -5,10 +5,12 @@ on:
     branches: [ main ]
     paths:
       - 'caddy/Dockerfile'
+      - '.github/workflows/caddy-build-push.yml'
   pull_request:
     branches: [ main ]
     paths:
       - 'caddy/Dockerfile'
+      - '.github/workflows/caddy-build-push.yml'
   workflow_dispatch:  # Allow manual triggering
 
 jobs:
