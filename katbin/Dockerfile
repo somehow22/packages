@@ -39,22 +39,19 @@ RUN mix phx.digest
 RUN mix do compile, release
 
 # prepare release image
-FROM alpine AS app
+FROM alpine:latest AS app
 RUN apk add --no-cache openssl ncurses-libs libstdc++
 
 WORKDIR /app
 
-RUN chown nobody:nobody /app
+COPY --from=build /app/_build/prod/rel/ketbin ./
+COPY source/startup.sh ./
 
-USER nobody:nobody
+RUN chmod +x /app/startup.sh && \
+    chown -R nobody:nobody /app
 
-COPY --from=build --chown=nobody:nobody /app/_build/prod/rel/ketbin ./
-
-# Copy our custom startup.sh
-COPY source/startup.sh /app/startup.sh
-
-RUN chmod +x /app/startup.sh
+USER nobody
 
 ENV HOME=/app
 
-CMD ["/app/bin/ketbin", "start"]
+CMD ["/app/startup.sh"]
