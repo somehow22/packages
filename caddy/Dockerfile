@@ -1,4 +1,9 @@
-FROM caddy:2.8.4-builder-alpine AS builder
+FROM --platform=$BUILDPLATFORM caddy:2.8.4-builder-alpine AS builder
+
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
+
 RUN xcaddy build  \
   --with github.com/caddy-dns/cloudflare \
   --with github.com/WeidiDeng/caddy-cloudflare-ip \
@@ -7,7 +12,7 @@ RUN xcaddy build  \
   --with github.com/mholt/caddy-ratelimit \
   --with github.com/caddyserver/cache-handler
 
-FROM caddy:2-alpine
+FROM --platform=$TARGETPLATFORM caddy:2-alpine
 COPY --from=builder /usr/bin/caddy /usr/bin/caddy
 
 EXPOSE 80 443 2019
