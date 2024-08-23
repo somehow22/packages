@@ -1,0 +1,4 @@
+source/.git
+source/.github
+source/priv/cert.pem
+source/sample.env

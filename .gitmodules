@@ -1,0 +1,3 @@
+[submodule "katbin/source"]
+	path = katbin/source
+	url = https://github.com/SphericalKat/katbin
