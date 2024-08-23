@@ -1,11 +1,10 @@
-
 #  Package Manager
 
 ## Overview
 This repository serves as a versatile package manager tailored for custom needs. It handles multiple services, with Caddy being the first implemented example.
 
 Key features:
-1. Build Docker images from customized configurations
+1. use Github Actions to build Docker images from customized configurations
 2. Tag images according to established conventions
 3. Push images to GitHub Container Registry (ghcr.io)
 4. Regularly check for upstream updates and create pull requests
@@ -30,6 +29,9 @@ graph TD
 
 ### Caddy
 Custom Caddy server with additional modules. See `services/caddy/README.md` for details.
+
+### Katbin
+A pastebin service written in Kotlin. See `katbin/README.md` for details. This service is included as a git submodule and built from source.
 
 ### [Other Service]
 [Brief description of other service. Add as implemented.]

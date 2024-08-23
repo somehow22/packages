@@ -14,18 +14,18 @@ RUN mix local.hex --force && \
 ENV MIX_ENV=prod
 
 # install mix dependencies
-COPY mix.exs mix.lock ./
-COPY config config
+COPY source/mix.exs source/mix.lock ./
+COPY source/config config
 RUN mix do deps.get, deps.compile
 
 # build assets
-COPY assets/package.json assets/package-lock.json ./assets/
+COPY source/assets/package.json source/assets/package-lock.json ./assets/
 RUN npm --prefix ./assets ci --progress=false --no-audit --loglevel=error
 
-COPY priv priv
-COPY assets assets
-COPY lib lib
-COPY native native
+COPY source/priv priv
+COPY source/assets assets
+COPY source/lib lib
+COPY source/native native
 RUN npm run --prefix ./assets deploy
 RUN mix phx.digest
 
@@ -45,7 +45,7 @@ USER nobody:nobody
 
 COPY --from=build --chown=nobody:nobody /app/_build/prod/rel/ketbin ./
 
-COPY --chown=nobody:nobody startup.sh startup.sh
+COPY source/startup.sh /app/startup.sh
 
 RUN chmod +x /app/startup.sh
 

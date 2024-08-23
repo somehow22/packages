@@ -1,11 +1,11 @@
 # Katbin
 
-This directory contains the configuration for Katbin, a pastebin service written in Kotlin, as part of the versatile package manager.
+This directory contains the configuration for Katbin, a pastebin service written in Elixir, as part of the versatile package manager.
 
 ## Features
 
 - Pastebin functionality
-- Written in Kotlin
+- Written in Elixir
 - Containerized for easy deployment
 
 ## Files
@@ -20,6 +20,6 @@ This directory contains the configuration for Katbin, a pastebin service written
    git submodule update --init --recursive
    ```
 2. Build the Docker image using the provided Dockerfile
-3. Run the container, exposing port 8080
+3. Run the container, exposing the necessary ports
 
 For more details on Katbin, please refer to the original project: [https://github.com/sphericalkat/katbin](https://github.com/sphericalkat/katbin)
