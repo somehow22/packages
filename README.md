@@ -28,10 +28,10 @@ graph TD
 ## Services
 
 ### Caddy
-Custom Caddy server with additional modules. See `services/caddy/README.md` for details.
+Custom Caddy server with additional modules. See `caddy/README.md` for details.
 
 ### Katbin
-A pastebin service written in Kotlin. See `katbin/README.md` for details. This service is included as a git submodule and built from source.
+A pastebin service written in Elixir. See `katbin/README.md` for details. This service is included as a git submodule and built from source.
 
 ### [Other Service]
 [Brief description of other service. Add as implemented.]
