@@ -1,4 +1,4 @@
-FROM elixir:alpine AS build
+FROM elixir:1.14-alpine AS build
 
 # install build dependencies
 RUN apk add --no-cache build-base npm git curl py-pip rust cargo
@@ -16,7 +16,12 @@ ENV MIX_ENV=prod
 # install mix dependencies
 COPY source/mix.exs source/mix.lock ./
 COPY source/config config
-RUN mix do deps.get, deps.compile
+
+# Update hex and rebar, then get and compile dependencies
+RUN mix local.hex --force && \
+    mix local.rebar --force && \
+    mix deps.get && \
+    mix deps.compile
 
 # build assets
 COPY source/assets/package.json source/assets/package-lock.json ./assets/
@@ -45,10 +50,11 @@ USER nobody:nobody
 
 COPY --from=build --chown=nobody:nobody /app/_build/prod/rel/ketbin ./
 
+# Copy our custom startup.sh
 COPY source/startup.sh /app/startup.sh
 
 RUN chmod +x /app/startup.sh
 
 ENV HOME=/app
 
-CMD ["/app/startup.sh"]
+CMD ["/app/bin/ketbin", "start"]
