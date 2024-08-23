@@ -1,4 +1,4 @@
-FROM elixir:1.14-alpine AS build
+FROM --platform=$BUILDPLATFORM elixir:1.14-alpine AS build
 
 # install build dependencies
 RUN apk add --no-cache build-base npm git curl py-pip rust cargo
@@ -18,7 +18,8 @@ COPY source/mix.exs source/mix.lock ./
 COPY source/config config
 
 # Update hex and rebar, then get and compile dependencies
-RUN mix local.hex --force && \
+RUN apk add --no-cache openssl ca-certificates && \
+    mix local.hex --force && \
     mix local.rebar --force && \
     mix deps.get && \
     mix deps.compile
@@ -34,8 +35,7 @@ COPY source/native native
 RUN npm run --prefix ./assets deploy
 RUN mix phx.digest
 
-# uncomment COPY if rel/ exists
-# COPY rel rel
+# Build release
 RUN mix do compile, release
 
 # prepare release image
