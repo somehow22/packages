@@ -1,12 +1,19 @@
-FROM bitnami/python:3.11-debian-12
+ARG FROM_PYTHON_VERSION=3.11
+ARG DEBIAN_VERSION=bookworm
+FROM python:${FROM_PYTHON_VERSION}-slim-${DEBIAN_VERSION}
+ENV DEBIAN_FRONTEND noninteractive
 
 # Switch to root user
 USER root
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update &&  apt-get -yq dist-upgrade \
+    && apt-get install -yq --no-install-recommends \
     vim \
     screen \
+    cmake curl git \
+    locales sudo unzip \
+    ssh gnupg2 \
     lsof \
     netcat-openbsd \
     mtr-tiny \
@@ -25,29 +32,25 @@ RUN SYNCTHING_VERSION=$(curl -s https://api.github.com/repos/syncthing/syncthing
     mv syncthing-linux-amd64-${SYNCTHING_VERSION}/syncthing /root/work/bin/ && \
     rm -rf syncthing-linux-amd64-${SYNCTHING_VERSION} syncthing.tar.gz
 
-# Install Bun
-RUN curl -fsSL https://bun.sh/install | bash \
-    && mv /root/.bun /root/work/bun
-
 # Set up PATH
-ENV PATH="/root/work/bin:/root/work/bun/bin:${PATH}"
+ENV PATH="/root/work/bin:${PATH}"
 
 # Set working directory
 WORKDIR /root/work
 
-# Set up Python virtual environment
-RUN python -m venv venv \
-    && . venv/bin/activate \
-    && rm -rf ~/.cache/pip
+RUN python -m venv --system-site-packages ~/venv
+
+ENV SHELL=/bin/bash \
+  LC_ALL=en_US.UTF-8 \
+  LANG=en_US.UTF-8 \
+  LANGUAGE=en_US.UTF-8
+
+RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
+  locale-gen
 
 # Copy requirements.txt and install Python dependencies
 COPY requirements.txt .
 RUN . venv/bin/activate && pip install -r requirements.txt
 
-# Set default shell to zsh
-SHELL ["/bin/bash", "-c"]
-
 # Activate virtual environment in bash
 RUN echo "source /root/work/venv/bin/activate" >> ~/.bashrc
-
-CMD ["/bin/bash"]
