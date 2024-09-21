@@ -38,12 +38,16 @@ ENV PATH="/root/work/bin:${PATH}"
 # Set working directory
 WORKDIR /root/work
 
-RUN python -m venv --system-site-packages ~/venv
+# RUN python -m venv --system-site-packages ~/venv
 
-ENV SHELL=/bin/bash \
-  LC_ALL=en_US.UTF-8 \
-  LANG=en_US.UTF-8 \
-  LANGUAGE=en_US.UTF-8
+ENV VIRTUAL_ENV=/root/work/venv
+RUN python -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+ENV SHELL=/bin/bash
+ENV LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US.UTF-8
 
 RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
   locale-gen
