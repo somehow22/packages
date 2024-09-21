@@ -38,7 +38,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
-          context: ./deepnote/${{ matrix.image }}
+          context: ./deepnote
           file: ./deepnote/${{ matrix.image }}/Dockerfile
           platforms: linux/amd64
           push: true

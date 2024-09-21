@@ -35,8 +35,6 @@ RUN SYNCTHING_VERSION=$(curl -s https://api.github.com/repos/syncthing/syncthing
 # Set working directory
 WORKDIR /root/work
 
-# RUN python -m venv --system-site-packages ~/venv
-
 ENV VIRTUAL_ENV=/root/work/venv
 RUN python -m venv $VIRTUAL_ENV
 ENV PATH="/root/work/bin:$VIRTUAL_ENV/bin:$PATH"
@@ -49,9 +47,13 @@ ENV LANGUAGE=en_US.UTF-8
 RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
   locale-gen
 
-# Copy requirements.txt and install Python dependencies
+# Copy and install base packages
+COPY ../basepkgs.txt .
+RUN . venv/bin/activate && pip install -r basepkgs.txt && rm basepkgs.txt
+
+# Copy and install image-specific requirements
 COPY requirements.txt .
-RUN . venv/bin/activate && pip install -r requirements.txt
+RUN . venv/bin/activate && pip install -r requirements.txt && rm requirements.txt
 
 # Activate virtual environment in bash
 RUN echo "source /root/work/venv/bin/activate" >> ~/.bashrc

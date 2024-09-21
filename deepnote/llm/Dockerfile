@@ -43,7 +43,6 @@ ENV PATH="/root/work/bin:/root/work/bun/bin:${PATH}"
 WORKDIR /root/work
 
 # Install HAProxy
-# Install HAProxy
 RUN apt-get update && \
     apt-get install -y gnupg2 curl && \
     curl https://haproxy.debian.net/bernat.debian.org.gpg | apt-key add - && \
@@ -58,8 +57,13 @@ RUN python -m venv venv \
     && . venv/bin/activate \
     && rm -rf ~/.cache/pip
 
+# Copy and install base packages
+COPY ../basepkgs.txt .
+RUN . venv/bin/activate && pip install -r basepkgs.txt && rm basepkgs.txt
+
+# Copy and install image-specific requirements
 COPY requirements.txt .
-# RUN . venv/bin/activate && pip install -r requirements.txt
+RUN . venv/bin/activate && pip install -r requirements.txt && rm requirements.txt
 
 ENV SHELL=/bin/bash
 ENV LC_ALL=en_US.UTF-8
@@ -70,7 +74,6 @@ RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
   locale-gen
 
 ENV VIRTUAL_ENV=/root/work/venv
-RUN python -m venv $VIRTUAL_ENV
 ENV PATH="/root/work/bin:$VIRTUAL_ENV/bin:$PATH"
 
 SHELL ["/bin/bash", "-c"]
