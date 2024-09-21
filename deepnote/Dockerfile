@@ -1,4 +1,4 @@
-FROM bitnami/python:3.12-debian-12
+FROM bitnami/python:3.11-debian-12
 
 # Switch to root user
 USER root
@@ -40,12 +40,13 @@ ENV PATH="/root/work/venv/bin:${PATH}"
 
 # Copy requirements.txt and install Python dependencies
 COPY requirements.txt /root/work/
+RUN . /root/work/venv/bin/activate && pip install -r /root/work/requirements.txt
 WORKDIR /root/work
 
 # Set default shell to zsh
-SHELL ["/bin/zsh", "-c"]
+SHELL ["/bin/bash", "-c"]
 
 # Activate virtual environment in zsh
-RUN echo "source /root/work/venv/bin/activate" >> ~/.zshrc
+RUN echo "source /root/work/venv/bin/activate" >> ~/.bashrc
 
-CMD ["/bin/zsh"]
+CMD ["/bin/bash"]
