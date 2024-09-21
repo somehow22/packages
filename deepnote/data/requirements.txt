@@ -1,0 +1,6 @@
+pydantic
+httpx
+fastapi
+pandas
+matplotlib
+tabulate
