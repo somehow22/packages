@@ -1,8 +1,8 @@
-jupyter
-jupyter-server
-jupyter-notebook
-jupyter-nbconvert
-jupyter-nbextension
+jupyterlab
+jupyter_server
+notebook
+nbconvert
+jupyter_contrib_nbextensions
 pydantic
 httpx
 fastapi

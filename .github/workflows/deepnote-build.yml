@@ -43,6 +43,8 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/deepnote:${{ matrix.image }}
+          build-args: |
+            IMAGE=${{ matrix.image }}
           labels: |
             org.opencontainers.image.authors="Magpie Labs"
             org.opencontainers.image.description="for deepnote dev"
