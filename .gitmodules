@@ -1,6 +1,3 @@
 [submodule "katbin/source"]
 	path = katbin/source
 	url = https://github.com/SphericalKat/katbin
-[submodule "one-hub"]
-	path = one-hub
-	url = https://github.com/MartialBE/one-hub
