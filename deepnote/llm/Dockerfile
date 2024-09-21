@@ -36,15 +36,16 @@ ENV PATH="/root/work/bin:/root/work/bun/bin:${PATH}"
 WORKDIR /root/work
 
 # Install HAProxy
-RUN curl https://haproxy.debian.net/bernat.debian.org.gpg | gpg --dearmor > /usr/share/keyrings/haproxy.debian.net.gpg && \
-    echo deb "[signed-by=/usr/share/keyrings/haproxy.debian.net.gpg]" \
-    http://haproxy.debian.net bookworm-backports-3.0 main \
-    > /etc/apt/sources.list.d/haproxy.list && \
+# Install HAProxy
+RUN apt-get update && \
+    apt-get install -y gnupg2 curl && \
+    curl https://haproxy.debian.net/bernat.debian.org.gpg | apt-key add - && \
+    echo "deb http://haproxy.debian.net bookworm-backports-3.0 main" > /etc/apt/sources.list.d/haproxy.list && \
     apt-get update && \
-    apt-get install -y haproxy=3.0.\* && \
+    apt-get install -y haproxy && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
+    
 # Set up Python virtual environment
 RUN python -m venv venv \
     && . venv/bin/activate \
