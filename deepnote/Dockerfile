@@ -32,21 +32,22 @@ RUN curl -fsSL https://bun.sh/install | bash \
 # Set up PATH
 ENV PATH="/root/work/bin:/root/work/bun/bin:${PATH}"
 
+# Set working directory
+WORKDIR /root/work
+
 # Set up Python virtual environment
 RUN python -m venv venv \
     && . venv/bin/activate \
     && rm -rf ~/.cache/pip
-ENV PATH="/root/work/venv/bin:${PATH}"
 
 # Copy requirements.txt and install Python dependencies
-COPY requirements.txt /root/work/
-RUN . /root/work/venv/bin/activate && pip install -r /root/work/requirements.txt
-WORKDIR /root/work
+COPY requirements.txt .
+RUN . venv/bin/activate && pip install -r requirements.txt
 
 # Set default shell to zsh
 SHELL ["/bin/bash", "-c"]
 
-# Activate virtual environment in zsh
+# Activate virtual environment in bash
 RUN echo "source /root/work/venv/bin/activate" >> ~/.bashrc
 
 CMD ["/bin/bash"]
