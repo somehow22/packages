@@ -32,9 +32,6 @@ RUN SYNCTHING_VERSION=$(curl -s https://api.github.com/repos/syncthing/syncthing
     mv syncthing-linux-amd64-${SYNCTHING_VERSION}/syncthing /root/work/bin/ && \
     rm -rf syncthing-linux-amd64-${SYNCTHING_VERSION} syncthing.tar.gz
 
-# Set up PATH
-ENV PATH="/root/work/bin:${PATH}"
-
 # Set working directory
 WORKDIR /root/work
 
@@ -42,7 +39,7 @@ WORKDIR /root/work
 
 ENV VIRTUAL_ENV=/root/work/venv
 RUN python -m venv $VIRTUAL_ENV
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+ENV PATH="/root/work/bin:$VIRTUAL_ENV/bin:$PATH"
 
 ENV SHELL=/bin/bash
 ENV LC_ALL=en_US.UTF-8
@@ -58,3 +55,5 @@ RUN . venv/bin/activate && pip install -r requirements.txt
 
 # Activate virtual environment in bash
 RUN echo "source /root/work/venv/bin/activate" >> ~/.bashrc
+
+CMD ["/bin/bash"]

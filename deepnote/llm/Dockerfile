@@ -1,12 +1,19 @@
-FROM bitnami/python:3.12-debian-12
+ARG FROM_PYTHON_VERSION=3.11
+ARG DEBIAN_VERSION=bookworm
+FROM python:${FROM_PYTHON_VERSION}-slim-${DEBIAN_VERSION}
+ENV DEBIAN_FRONTEND noninteractive
 
 # Switch to root user
 USER root
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update &&  apt-get -yq dist-upgrade \
+    && apt-get install -yq --no-install-recommends \
     vim \
     screen \
+    cmake curl git \
+    locales sudo unzip \
+    ssh gnupg2 \
     lsof \
     netcat-openbsd \
     mtr-tiny \
@@ -45,17 +52,27 @@ RUN apt-get update && \
     apt-get install -y haproxy && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-    
+
 # Set up Python virtual environment
 RUN python -m venv venv \
     && . venv/bin/activate \
     && rm -rf ~/.cache/pip
 
-# Copy requirements.txt and install Python dependencies
 COPY requirements.txt .
-RUN . venv/bin/activate && pip install -r requirements.txt
+# RUN . venv/bin/activate && pip install -r requirements.txt
 
-# Set default shell to zsh
+ENV SHELL=/bin/bash
+ENV LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US.UTF-8
+
+RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
+  locale-gen
+
+ENV VIRTUAL_ENV=/root/work/venv
+RUN python -m venv $VIRTUAL_ENV
+ENV PATH="/root/work/bin:$VIRTUAL_ENV/bin:$PATH"
+
 SHELL ["/bin/bash", "-c"]
 
 # Activate virtual environment in bash
