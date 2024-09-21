@@ -1,7 +1,7 @@
 ARG FROM_PYTHON_VERSION=3.11
 ARG DEBIAN_VERSION=bookworm
 FROM python:${FROM_PYTHON_VERSION}-slim-${DEBIAN_VERSION}
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Switch to root user
 USER root
@@ -37,7 +37,7 @@ WORKDIR /root/work
 
 ENV VIRTUAL_ENV=/root/work/venv
 RUN python -m venv $VIRTUAL_ENV
-ENV PATH="/root/work/bin:$VIRTUAL_ENV/bin:$PATH"
+ENV PATH="/root/work/bin:$VIRTUAL_ENV/bin:${PATH}"
 
 ENV SHELL=/bin/bash
 ENV LC_ALL=en_US.UTF-8
@@ -48,11 +48,11 @@ RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
   locale-gen
 
 # Copy and install base packages
-COPY ../basepkgs.txt .
+COPY basepkgs.txt .
 RUN . venv/bin/activate && pip install -r basepkgs.txt && rm basepkgs.txt
 
 # Copy and install image-specific requirements
-COPY requirements.txt .
+COPY data/requirements.txt .
 RUN . venv/bin/activate && pip install -r requirements.txt && rm requirements.txt
 
 # Activate virtual environment in bash
