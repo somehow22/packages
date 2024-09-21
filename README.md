@@ -31,7 +31,12 @@ graph TD
 Custom Caddy server with additional modules. See `caddy/README.md` for details.
 
 ### Katbin
+> only as a showcase for git submodules, not really needed
 A pastebin service written in Elixir. See `katbin/README.md` for details. This service is included as a git submodule and built from source.
+
+### opengist
+
+### transfer.sh
 
 ### [Other Service]
 [Brief description of other service. Add as implemented.]

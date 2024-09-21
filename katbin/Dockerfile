@@ -55,7 +55,7 @@ USER nobody
 ENV HOME=/app
 
 # Set default environment variables
-ENV DATABASE_URL='postgres://postgres:postgres@db:5432/katbin'
+ENV DATABASE_URL=postgres://postgres:katbin@db:5432/katbin
 ENV SECRET_KEY_BASE='default_secret_key_base_change_me_in_production'
 ENV SWOOSH_USERNAME='noreply@katb.in'
 ENV SWOOSH_PASSWORD='default_password_change_me'

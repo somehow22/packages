@@ -28,10 +28,11 @@ services:
 
   katbin:
     image: ghcr.io/somehow22/katbin
+    container_name: katbin
     depends_on:
       - katbin-db
     ports:
-      - "8080:8080"
+      - "4000:4000"
     env_file:
       - .env
     networks:
@@ -71,6 +72,6 @@ networks:
    ```
    Look for any error messages or confirmation that the service has started successfully.
 
-6. Access Katbin at `http://localhost:8080`
+6. Access Katbin at `http://localhost:4000`
 
 For more details on Katbin, please refer to the original project: [https://github.com/sphericalkat/katbin](https://github.com/sphericalkat/katbin)
