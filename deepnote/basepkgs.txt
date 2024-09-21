@@ -1,0 +1,8 @@
+jupyter
+jupyter-server
+jupyter-notebook
+jupyter-nbconvert
+jupyter-nbextension
+pydantic
+httpx
+fastapi

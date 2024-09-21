@@ -48,11 +48,11 @@ RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
   locale-gen
 
 # Copy and install base packages
-COPY ../basepkgs.txt .
+COPY basepkgs.txt .
 RUN . venv/bin/activate && pip install -r basepkgs.txt && rm basepkgs.txt
 
 # Copy and install image-specific requirements
-COPY requirements.txt .
+COPY data/requirements.txt .
 RUN . venv/bin/activate && pip install -r requirements.txt && rm requirements.txt
 
 # Activate virtual environment in bash
