@@ -1,4 +1,4 @@
-name: Build and Push
+name: Build and Push Deepnote Images
 
 on:
   push:
@@ -6,14 +6,14 @@ on:
     paths:
       - 'deepnote/**'
       - '.github/workflows/deepnote-build.yml'
-  workflow_dispatch:  # Allow manual triggering
-
-env:
-  IMAGE_NAME: deepnote-mpdev
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image: [data, llm]
     permissions:
       contents: read
       packages: write
@@ -38,9 +38,11 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
-          context: ./deepnote
-          file: ./deepnote/Dockerfile
+          context: ./deepnote/${{ matrix.image }}
+          file: ./deepnote/${{ matrix.image }}/Dockerfile
           platforms: linux/amd64
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/deepnote-mpdev:latest
-          
+          tags: ghcr.io/${{ github.repository_owner }}/deepnote:${{ matrix.image }}
+          labels: |
+            org.opencontainers.image.source=${{ github.event.repository.html_url }}
+            org.opencontainers.image.revision=${{ github.sha }}
