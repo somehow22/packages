@@ -58,11 +58,11 @@ RUN python -m venv venv \
     && rm -rf ~/.cache/pip
 
 # Copy and install base packages
-COPY basepkgs.txt .
+COPY ../basepkgs.txt .
 RUN . venv/bin/activate && pip install -r basepkgs.txt && rm basepkgs.txt
 
 # Copy and install image-specific requirements
-COPY llm/requirements.txt .
+COPY requirements.txt .
 RUN . venv/bin/activate && pip install -r requirements.txt && rm requirements.txt
 
 ENV SHELL=/bin/bash
