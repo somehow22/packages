@@ -9,8 +9,9 @@ ARG SINGBOX_VERSION
 # Install necessary build tools and kernel headers
 RUN apt-get update && apt-get install -y \
     build-essential \
-    linux-headers-$(uname -r) \
-    kmod dkms \
+    linux-headers-generic \
+    kmod \
+    dkms \
     && rm -rf /var/lib/apt/lists/*
 
 # Download and extract the sing-box source tarball
@@ -32,7 +33,8 @@ RUN go build -v -trimpath -tags \
 # Build tcp-brutal
 WORKDIR /tcp-brutal
 RUN curl -L https://github.com/apernet/tcp-brutal/archive/refs/heads/master.tar.gz | tar xz --strip-components=1
-RUN make
+RUN sed -i 's/$(shell uname -r)/$(shell ls -1 /lib/modules | tail -n 1)/' Makefile
+RUN make KERNELDIR=/lib/modules/$(ls -1 /lib/modules | tail -n 1)/build
 
 # Final stage
 FROM debian:bookworm-slim
