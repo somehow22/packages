@@ -6,6 +6,12 @@ WORKDIR /go/src/github.com/sagernet/sing-box
 # Arguments for version
 ARG SINGBOX_VERSION
 
+# Install necessary build tools and kernel headers
+RUN apt-get update && apt-get install -y \
+    build-essential dkms \
+    linux-headers-generic \
+    && rm -rf /var/lib/apt/lists/*
+
 # Download and extract the sing-box source tarball
 RUN curl -L https://github.com/SagerNet/sing-box/archive/refs/tags/v${SINGBOX_VERSION}.tar.gz | tar xz --strip-components=1
 
