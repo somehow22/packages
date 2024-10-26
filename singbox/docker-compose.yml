@@ -1,4 +1,3 @@
-
 services:
   singbox:
     image: ghcr.io/somehow22/singbox:latest
@@ -8,5 +7,9 @@ services:
       - ./singbox-config:/etc/sing-box
     cap_add:
       - NET_ADMIN
+      - SYS_MODULE
+    privileged: true
     network_mode: host
+    environment:
+      - BUILD_KERNEL_MODULE=true
     command: run -C /etc/sing-box
