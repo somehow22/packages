@@ -1,4 +1,4 @@
-# Build stage for sing-box
+# Build stage for sing-box and tcp-brutal
 FROM --platform=$BUILDPLATFORM golang:1.23-bookworm AS builder
 
 WORKDIR /go/src/github.com/sagernet/sing-box
@@ -6,7 +6,7 @@ WORKDIR /go/src/github.com/sagernet/sing-box
 # Arguments for version
 ARG SINGBOX_VERSION
 
-# Download and extract the source tarball
+# Download and extract the sing-box source tarball
 RUN curl -L https://github.com/SagerNet/sing-box/archive/refs/tags/v${SINGBOX_VERSION}.tar.gz | tar xz --strip-components=1
 
 # Build sing-box
@@ -22,33 +22,26 @@ RUN go build -v -trimpath -tags \
     -ldflags "-X \"github.com/sagernet/sing-box/constant.Version=v${SINGBOX_VERSION}\" -s -w -buildid=" \
     ./cmd/sing-box
 
+# Build tcp-brutal
+WORKDIR /tcp-brutal
+RUN curl -L https://github.com/apernet/tcp-brutal/archive/refs/heads/master.tar.gz | tar xz --strip-components=1
+RUN make
+
 # Final stage
 FROM debian:bookworm-slim
 
-# Install dependencies
+# Install minimal runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     nftables \
     kmod \
-    curl \
-    dkms \
-    linux-headers-generic \
-    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the sing-box binary from the builder stage
 COPY --from=builder /go/bin/sing-box /usr/local/bin/sing-box
 
-# Download the kernel module build script
-RUN curl -fsSL https://tcp.hy2.sh/ -o /usr/local/bin/build_kernel_module.sh \
-    && chmod +x /usr/local/bin/build_kernel_module.sh
-
-# Modify the script to handle non-interactive environment
-RUN sed -i 's/tput/tput -T xterm/g' /usr/local/bin/build_kernel_module.sh
-
-# Build the kernel module in a non-interactive manner
-ENV TERM=xterm
-RUN echo -e "\n\n\n" | /usr/local/bin/build_kernel_module.sh || true
+# Copy the tcp-brutal kernel module from the builder stage
+COPY --from=builder /tcp-brutal/brutal.ko /lib/modules/$(uname -r)/
 
 # Copy the entrypoint script
 COPY entrypoint.sh /entrypoint.sh
