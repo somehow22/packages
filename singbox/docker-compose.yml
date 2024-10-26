@@ -1,0 +1,12 @@
+
+services:
+  singbox:
+    image: ghcr.io/somehow22/singbox:latest
+    container_name: singbox
+    restart: unless-stopped
+    volumes:
+      - ./singbox-config:/etc/sing-box
+    cap_add:
+      - NET_ADMIN
+    network_mode: host
+    command: run -C /etc/sing-box

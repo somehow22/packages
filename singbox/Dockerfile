@@ -25,11 +25,14 @@ RUN go build -v -trimpath -tags \
 # Final stage
 FROM debian:bookworm-slim
 
-# Install minimal runtime dependencies
+# Install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     nftables \
     curl \
+    dkms \
+    linux-headers-generic \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the sing-box binary from the builder stage
@@ -39,5 +42,9 @@ COPY --from=builder /go/bin/sing-box /usr/local/bin/sing-box
 RUN curl -fsSL https://tcp.hy2.sh/ -o /usr/local/bin/build_kernel_module.sh \
     && chmod +x /usr/local/bin/build_kernel_module.sh
 
+# Copy the entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Set the entrypoint
-ENTRYPOINT ["sing-box"]
+ENTRYPOINT ["/entrypoint.sh"]
