@@ -1,15 +1,17 @@
 #!/bin/bash
 
-# Attempt to load the kernel module if it exists
-if [ -f "/lib/modules/$(uname -r)/brutal.ko" ]; then
-    echo "Loading brutal kernel module..."
-    if modprobe brutal; then
+# Function to load the kernel module
+load_module() {
+    if insmod /usr/lib/modules/brutal.ko; then
         echo "Successfully loaded brutal kernel module"
     else
         echo "Failed to load brutal kernel module. Continuing without it."
     fi
-else
-    echo "Brutal kernel module not found. Continuing without it."
+}
+
+# Check if we need to load the kernel module
+if [ "$LOAD_KERNEL_MODULE" = "true" ]; then
+    load_module
 fi
 
 # Execute sing-box with the provided arguments

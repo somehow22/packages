@@ -8,8 +8,9 @@ ARG SINGBOX_VERSION
 
 # Install necessary build tools and kernel headers
 RUN apt-get update && apt-get install -y \
-    build-essential dkms \
-    linux-headers-generic \
+    build-essential \
+    linux-headers-$(uname -r) \
+    kmod dkms \
     && rm -rf /var/lib/apt/lists/*
 
 # Download and extract the sing-box source tarball
@@ -36,7 +37,7 @@ RUN make
 # Final stage
 FROM debian:bookworm-slim
 
-# Install minimal runtime dependencies
+# Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     nftables \
@@ -47,7 +48,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /go/bin/sing-box /usr/local/bin/sing-box
 
 # Copy the tcp-brutal kernel module from the builder stage
-COPY --from=builder /tcp-brutal/brutal.ko /lib/modules/$(uname -r)/
+COPY --from=builder /tcp-brutal/brutal.ko /usr/lib/modules/
 
 # Copy the entrypoint script
 COPY entrypoint.sh /entrypoint.sh
