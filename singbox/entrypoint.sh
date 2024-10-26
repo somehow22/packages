@@ -1,8 +1,12 @@
 #!/bin/bash
 
-# Attempt to build the kernel module
-echo "Attempting to build the kernel module..."
-/usr/local/bin/build_kernel_module.sh || echo "Failed to build kernel module. Continuing without it."
+# Attempt to load the kernel module
+echo "Attempting to load the kernel module..."
+if modprobe brutal; then
+    echo "Successfully loaded brutal kernel module"
+else
+    echo "Failed to load brutal kernel module. Continuing without it."
+fi
 
 # Execute sing-box with the provided arguments
 exec sing-box "$@"

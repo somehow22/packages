@@ -1,4 +1,4 @@
-# Build stage
+# Build stage for sing-box
 FROM --platform=$BUILDPLATFORM golang:1.23-bookworm AS builder
 
 WORKDIR /go/src/github.com/sagernet/sing-box
@@ -22,25 +22,39 @@ RUN go build -v -trimpath -tags \
     -ldflags "-X \"github.com/sagernet/sing-box/constant.Version=v${SINGBOX_VERSION}\" -s -w -buildid=" \
     ./cmd/sing-box
 
-# Final stage
-FROM debian:bookworm-slim
+# Build stage for kernel module
+FROM debian:bookworm AS module-builder
 
 # Install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
-    nftables \
     curl \
     dkms \
     linux-headers-generic \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
+# Download and run the kernel module build script
+RUN curl -fsSL https://tcp.hy2.sh/ -o /build_kernel_module.sh \
+    && chmod +x /build_kernel_module.sh \
+    && /build_kernel_module.sh
+
+# Final stage
+FROM debian:bookworm-slim
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    nftables \
+    kmod \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy the sing-box binary from the builder stage
 COPY --from=builder /go/bin/sing-box /usr/local/bin/sing-box
 
-# Download the kernel module build script
-RUN curl -fsSL https://tcp.hy2.sh/ -o /usr/local/bin/build_kernel_module.sh \
-    && chmod +x /usr/local/bin/build_kernel_module.sh
+# Copy the built kernel module from the module-builder stage
+# We're copying the entire /lib/modules directory to ensure we get all built modules
+COPY --from=module-builder /lib/modules /lib/modules
 
 # Copy the entrypoint script
 COPY entrypoint.sh /entrypoint.sh
