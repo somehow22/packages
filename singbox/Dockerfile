@@ -33,8 +33,10 @@ RUN go build -v -trimpath -tags \
 # Build tcp-brutal
 WORKDIR /tcp-brutal
 RUN curl -L https://github.com/apernet/tcp-brutal/archive/refs/heads/master.tar.gz | tar xz --strip-components=1
-RUN sed -i 's/$(shell uname -r)/$(shell ls -1 /lib/modules | tail -n 1)/' Makefile
-RUN make KERNELDIR=/lib/modules/$(ls -1 /lib/modules | tail -n 1)/build
+# Modify Makefile to ensure TCP congestion control support
+RUN sed -i 's/ccflags-y := -std=gnu99/ccflags-y := -std=gnu99 -DCONFIG_TCP_CONG_BBR -DCONFIG_TCP_CONG_CUBIC -DCONFIG_IPV6=y/' Makefile && \
+    KERNELDIR=/usr/src/linux-headers-$(ls -1 /lib/modules | tail -n 1) \
+    KCFLAGS="-DCONFIG_TCP_CONG_BBR -DCONFIG_TCP_CONG_CUBIC -DCONFIG_IPV6=y" make
 
 # Final stage
 FROM debian:bookworm-slim
@@ -44,6 +46,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     nftables \
     kmod \
+    linux-modules-extra-$(uname -r) \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the sing-box binary from the builder stage
