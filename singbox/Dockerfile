@@ -31,8 +31,7 @@ RUN cd /usr/src/tcp-brutal && \
     sed -i "s/MODVER/$TCP_BRUTAL_VERSION_CLEAN/" AKMBUILD && \
     cat AKMBUILD && \
     . /etc/environment && \
-    echo "KERNEL_VERSION=$KERNEL_VERSION" && \
-    akms install --kernel lts all && \
+    akms install all && \
     echo "Built tcp-brutal module for Sing-box version ${SINGBOX_VERSION}"
 
 # Clean up unnecessary files to reduce image size
