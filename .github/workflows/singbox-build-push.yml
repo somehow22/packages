@@ -1,7 +1,17 @@
 name: Build and Push Sing-box Docker Image
 
-# Manual trigger only
+# Disabled automatic builds - manual trigger only
 on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'singbox/**'
+      - '.github/workflows/singbox-build-push.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'singbox/**'
+      - '.github/workflows/singbox-build-push.yml'
   workflow_dispatch:
 
 jobs:
