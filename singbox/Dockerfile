@@ -16,7 +16,7 @@ ENV TCP_BRUTAL_REPO="https://github.com/apernet/tcp-brutal"
 ENV SINGBOX_VERSION="latest"
 
 # Fetch the latest release version of tcp-brutal
-RUN TCP_BRUTAL_VERSION=$(curl -s https://api.github.com/repos/apernet/tcp-brutal/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")') && \
+RUN TCP_BRUTAL_VERSION=$(curl -s https://api.github.com/repos/apernet/tcp-brutal/releases/latest | sed -n 's/.*"tag_name": "\(.*\)".*/\1/p') && \
     echo "Latest tcp-brutal version: $TCP_BRUTAL_VERSION" && \
     echo "TCP_BRUTAL_VERSION=${TCP_BRUTAL_VERSION#v}" >> /etc/environment
 
