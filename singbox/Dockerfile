@@ -28,7 +28,7 @@ RUN TCP_BRUTAL_VERSION=$(curl -s https://api.github.com/repos/apernet/tcp-brutal
 # Copy and update AKMBUILD file
 COPY AKMBUILD /usr/src/tcp-brutal/
 RUN cd /usr/src/tcp-brutal && \
-    sed -i "s/modver=\".*\"/modver=\"1.0.3\"/" AKMBUILD && \
+    sed -i "s/MODVER/$TCP_BRUTAL_VERSION_CLEAN/" AKMBUILD && \
     akms install all && \
     echo "Built tcp-brutal module for Sing-box version ${SINGBOX_VERSION}"
 
