@@ -10,6 +10,4 @@ services:
       - SYS_MODULE
     privileged: true
     network_mode: host
-    environment:
-      - LOAD_KERNEL_MODULE=false
     command: run -C /etc/sing-box

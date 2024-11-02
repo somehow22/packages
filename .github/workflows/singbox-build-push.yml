@@ -1,6 +1,6 @@
 name: Build and Push Sing-box Docker Image
 
-# Disabled automatic builds - manual trigger only
+# Manual trigger only
 on:
   workflow_dispatch:
 
@@ -13,7 +13,7 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
+
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
 
@@ -21,21 +21,27 @@ jobs:
       uses: docker/setup-buildx-action@v3
       with:
         platforms: linux/amd64,linux/arm64
-    
+
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    
+
     - name: Get Sing-box version
       id: singbox_version
       run: |
         SINGBOX_VERSION=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases/latest | jq -r .tag_name)
-        echo "version=${SINGBOX_VERSION#v}" >> $GITHUB_OUTPUT
-        echo "SINGBOX_VERSION=${SINGBOX_VERSION#v}" >> $GITHUB_ENV
-    
+        SINGBOX_VERSION=${SINGBOX_VERSION#v}
+        echo "SINGBOX_VERSION=${SINGBOX_VERSION}" >> $GITHUB_ENV
+
+    - name: Get Alpine linux-lts-dev version
+      id: linux_version
+      run: |
+        KERNEL_VERSION=$(docker run --rm alpine:latest sh -c "apk update && apk add --no-cache linux-lts-dev && apk info -v linux-lts-dev | grep -oP '(?<=linux-lts-dev-)[\d\.]+'")
+        echo "KERNEL_VERSION=${KERNEL_VERSION}" >> $GITHUB_ENV
+
     - name: Build and push
       uses: docker/build-push-action@v5
       with:
@@ -43,7 +49,9 @@ jobs:
         file: ./singbox/Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
-        provenance: false
+        build-args: |
+          SINGBOX_VERSION=${{ env.SINGBOX_VERSION }}
         tags: |
           ghcr.io/${{ github.repository_owner }}/singbox:latest
           ghcr.io/${{ github.repository_owner }}/singbox:${{ env.SINGBOX_VERSION }}
+          ghcr.io/${{ github.repository_owner }}/singbox:${{ env.SINGBOX_VERSION }}-kernel-${{ env.KERNEL_VERSION }}
