@@ -1,7 +1,7 @@
 modname=brutal
 
 _modsrcdir="/usr/src/tcp-brutal"
-modver="MODVER"
+modver="1.0.3"
 
 built_modules='brutal.ko'
 
