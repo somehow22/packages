@@ -24,17 +24,9 @@ RUN TCP_BRUTAL_VERSION=$(curl -s https://api.github.com/repos/apernet/tcp-brutal
 RUN mkdir -p /usr/src/tcp-brutal && \
     curl -L "https://github.com/apernet/tcp-brutal/archive/refs/tags/${TCP_BRUTAL_VERSION}.tar.gz" | tar xz --strip-components=1 -C /usr/src/tcp-brutal
 
-# Create the AKMBUILD file manually
-RUN echo 'modname=brutal
-
-_modsrcdir="/usr/src/tcp-brutal"
-modver="'"${TCP_BRUTAL_VERSION#v}"'"
-
-built_modules=`brutal.ko`
-
-build() {
-  make ${MAKEFLAGS:-} -C "$kernel_srcdir" M="$builddir" src="$srcdir" modules
-}' > /usr/src/tcp-brutal/AKMBUILD
+# Copy and update AKMBUILD file
+COPY AKMBUILD /usr/src/tcp-brutal/
+RUN sed -i "s/modver=\".*\"/modver=\"${TCP_BRUTAL_VERSION#v}\"/" /usr/src/tcp-brutal/AKMBUILD
 
 # Navigate to the tcp-brutal directory and build the module
 RUN cd /usr/src/tcp-brutal && \
@@ -42,7 +34,6 @@ RUN cd /usr/src/tcp-brutal && \
     echo "Built tcp-brutal module for Sing-box version ${SINGBOX_VERSION}"
 
 # Clean up unnecessary files to reduce image size
-RUN apk del alpine-sdk linux-lts-dev && \
-    rm -rf /usr/src/tcp-brutal
+RUN apk del alpine-sdk linux-lts-dev
 
 # Use the base image's ENTRYPOINT
