@@ -10,7 +10,9 @@ RUN apk update && apk upgrade && \
         tar \
         gzip \
         bash \
-        jq
+        jq && \
+    KERNEL_VERSION=$(ls -1 /lib/modules/ | head -n 1) && \
+    echo "KERNEL_VERSION=${KERNEL_VERSION}" >> /etc/environment
 
 # Define variables for versions
 ENV TCP_BRUTAL_REPO="https://github.com/apernet/tcp-brutal"
@@ -20,8 +22,7 @@ ENV SINGBOX_VERSION="latest"
 RUN TCP_BRUTAL_VERSION=$(curl -s https://api.github.com/repos/apernet/tcp-brutal/releases/latest | jq -r .tag_name) && \
     TARBALL_URL=$(curl -s https://api.github.com/repos/apernet/tcp-brutal/releases/latest | jq -r .tarball_url) && \
     echo "Latest tcp-brutal version: $TCP_BRUTAL_VERSION" && \
-    echo "TCP_BRUTAL_VERSION_CLEAN=${TCP_BRUTAL_VERSION#v}" >> /etc/environment && \
-    echo "export TCP_BRUTAL_VERSION_CLEAN=${TCP_BRUTAL_VERSION#v}" >> /etc/profile.d/tcp-brutal.sh && \
+    TCP_BRUTAL_VERSION_CLEAN=${TCP_BRUTAL_VERSION#v} && \
     mkdir -p /usr/src/tcp-brutal && \
     curl -L "$TARBALL_URL" | tar xz --strip-components=1 -C /usr/src/tcp-brutal
 
@@ -29,7 +30,8 @@ RUN TCP_BRUTAL_VERSION=$(curl -s https://api.github.com/repos/apernet/tcp-brutal
 COPY AKMBUILD /usr/src/tcp-brutal/
 RUN cd /usr/src/tcp-brutal && \
     sed -i "s/MODVER/$TCP_BRUTAL_VERSION_CLEAN/" AKMBUILD && \
-    akms install all && \
+    source /etc/environment && \
+    KERNELVERSION=$KERNEL_VERSION akms install all && \
     echo "Built tcp-brutal module for Sing-box version ${SINGBOX_VERSION}"
 
 # Clean up unnecessary files to reduce image size
