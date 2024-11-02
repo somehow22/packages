@@ -64,4 +64,3 @@ jobs:
         tags: |
           ghcr.io/${{ github.repository_owner }}/singbox:latest
           ghcr.io/${{ github.repository_owner }}/singbox:${{ env.SINGBOX_VERSION }}
-          # ghcr.io/${{ github.repository_owner }}/singbox:${{ env.SINGBOX_VERSION }}-kernel-${{ env.KERNEL_VERSION }}
