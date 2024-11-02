@@ -41,11 +41,6 @@ RUN cd /usr/src/tcp-brutal && \
     akms install all && \
     echo "Built tcp-brutal module for Sing-box version ${SINGBOX_VERSION}"
 
-# Extract the installed Linux LTS kernel version
-RUN KERNEL_VERSION=$(apk info -v linux-lts-dev | grep -oP '(?<=linux-lts-dev-)[\d\.]+') && \
-    TAG="singbox-${SINGBOX_VERSION}-kernel-${KERNEL_VERSION}" && \
-    echo "Tagging the package as $TAG"
-
 # Clean up unnecessary files to reduce image size
 RUN apk del alpine-sdk linux-lts-dev && \
     rm -rf /usr/src/tcp-brutal
