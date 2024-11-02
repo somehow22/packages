@@ -9,20 +9,20 @@ RUN apk update && apk upgrade && \
         curl \
         tar \
         gzip \
-        bash
+        bash \
+        jq
 
 # Define variables for versions
 ENV TCP_BRUTAL_REPO="https://github.com/apernet/tcp-brutal"
 ENV SINGBOX_VERSION="latest"
 
-# Fetch the latest release version of tcp-brutal
-RUN TCP_BRUTAL_VERSION=$(curl -s https://api.github.com/repos/apernet/tcp-brutal/releases/latest | sed -n 's/.*"tag_name": "\(.*\)".*/\1/p') && \
+# Fetch the latest release version and tarball URL of tcp-brutal
+RUN TCP_BRUTAL_VERSION=$(curl -s https://api.github.com/repos/apernet/tcp-brutal/releases/latest | jq -r .tag_name) && \
+    TARBALL_URL=$(curl -s https://api.github.com/repos/apernet/tcp-brutal/releases/latest | jq -r .tarball_url) && \
     echo "Latest tcp-brutal version: $TCP_BRUTAL_VERSION" && \
-    echo "TCP_BRUTAL_VERSION=${TCP_BRUTAL_VERSION#v}" >> /etc/environment
-
-# Download and extract the latest tcp-brutal release tarball
-RUN mkdir -p /usr/src/tcp-brutal && \
-    curl -L "https://github.com/apernet/tcp-brutal/archive/refs/tags/${TCP_BRUTAL_VERSION}.tar.gz" | tar xz --strip-components=1 -C /usr/src/tcp-brutal
+    echo "TCP_BRUTAL_VERSION=${TCP_BRUTAL_VERSION#v}" >> /etc/environment && \
+    mkdir -p /usr/src/tcp-brutal && \
+    curl -L "$TARBALL_URL" | tar xz --strip-components=1 -C /usr/src/tcp-brutal
 
 # Copy and update AKMBUILD file
 COPY AKMBUILD /usr/src/tcp-brutal/
