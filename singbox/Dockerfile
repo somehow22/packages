@@ -20,17 +20,16 @@ ENV SINGBOX_VERSION="latest"
 RUN TCP_BRUTAL_VERSION=$(curl -s https://api.github.com/repos/apernet/tcp-brutal/releases/latest | jq -r .tag_name) && \
     TARBALL_URL=$(curl -s https://api.github.com/repos/apernet/tcp-brutal/releases/latest | jq -r .tarball_url) && \
     echo "Latest tcp-brutal version: $TCP_BRUTAL_VERSION" && \
-    TCP_BRUTAL_VERSION_CLEAN=${TCP_BRUTAL_VERSION#v} && \
-    echo "TCP_BRUTAL_VERSION=$TCP_BRUTAL_VERSION_CLEAN" >> /etc/environment && \
+    echo "TCP_BRUTAL_VERSION_CLEAN=${TCP_BRUTAL_VERSION#v}" >> /etc/environment && \
+    echo "export TCP_BRUTAL_VERSION_CLEAN=${TCP_BRUTAL_VERSION#v}" >> /etc/profile.d/tcp-brutal.sh && \
     mkdir -p /usr/src/tcp-brutal && \
     curl -L "$TARBALL_URL" | tar xz --strip-components=1 -C /usr/src/tcp-brutal
 
 # Copy and update AKMBUILD file
 COPY AKMBUILD /usr/src/tcp-brutal/
-RUN sed -i "s/modver=\".*\"/modver=\"${TCP_BRUTAL_VERSION_CLEAN}\"/" /usr/src/tcp-brutal/AKMBUILD
-
-# Navigate to the tcp-brutal directory and build the module
-RUN cd /usr/src/tcp-brutal && \
+RUN source /etc/profile.d/tcp-brutal.sh && \
+    sed -i "s/modver=\".*\"/modver=\"$TCP_BRUTAL_VERSION_CLEAN\"/" /usr/src/tcp-brutal/AKMBUILD && \
+    cd /usr/src/tcp-brutal && \
     akms install all && \
     echo "Built tcp-brutal module for Sing-box version ${SINGBOX_VERSION}"
 
