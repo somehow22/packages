@@ -46,11 +46,11 @@ jobs:
         SINGBOX_VERSION=${SINGBOX_VERSION#v}
         echo "SINGBOX_VERSION=${SINGBOX_VERSION}" >> $GITHUB_ENV
 
-    - name: Get Alpine kernel version
-      id: kernel_version
-      run: |
-        KERNEL_VERSION=$(docker run --rm alpine:latest sh -c "apk update >/dev/null && apk add --no-cache linux-lts-dev >/dev/null 2>&1 && ls /usr/src/linux-headers-* | sed 's/.*headers-\(.*\)-[0-9]-lts/\1/'")
-        echo "KERNEL_VERSION=${KERNEL_VERSION}" >> $GITHUB_ENV
+    # - name: Get Alpine kernel version
+    #   id: kernel_version
+    #   run: |
+    #     KERNEL_VERSION=$(docker run --rm alpine:latest sh -c "apk update >/dev/null && apk add --no-cache linux-lts-dev >/dev/null 2>&1 && ls /usr/src/linux-headers-* | sed 's/.*headers-\(.*\)-[0-9]-lts/\1/'")
+    #     echo "KERNEL_VERSION=${KERNEL_VERSION}" >> $GITHUB_ENV
           
     - name: Build and push
       uses: docker/build-push-action@v5
@@ -64,4 +64,4 @@ jobs:
         tags: |
           ghcr.io/${{ github.repository_owner }}/singbox:latest
           ghcr.io/${{ github.repository_owner }}/singbox:${{ env.SINGBOX_VERSION }}
-          ghcr.io/${{ github.repository_owner }}/singbox:${{ env.SINGBOX_VERSION }}-kernel-${{ env.KERNEL_VERSION }}
+          # ghcr.io/${{ github.repository_owner }}/singbox:${{ env.SINGBOX_VERSION }}-kernel-${{ env.KERNEL_VERSION }}
