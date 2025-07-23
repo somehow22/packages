@@ -1,5 +1,5 @@
 # Update 241004
-FROM --platform=$BUILDPLATFORM caddy:2.8.4-builder-alpine AS builder
+FROM --platform=$BUILDPLATFORM caddy:2.10.0-builder-alpine AS builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
