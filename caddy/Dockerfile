@@ -23,9 +23,15 @@ RUN xcaddy build \
 FROM --platform=$TARGETPLATFORM caddy:${CADDY_VERSION}-alpine
 COPY --from=builder /usr/bin/caddy /usr/bin/caddy
 
-USER 10001
+# Minimal helper to drop privileges after fixing volume ownership
+RUN apk add --no-cache su-exec
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+USER root
 EXPOSE 80 443 8080
 VOLUME /config
 WORKDIR /srv
 
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
