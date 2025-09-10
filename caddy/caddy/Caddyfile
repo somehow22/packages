@@ -19,6 +19,11 @@
     }
 }
 
+# Plain HTTP health endpoint for k8s probes (no TLS)
+:8080 {
+    respond /health 200
+}
+
 # Reverse proxy for the specified domain
 xx.example.com {
     reverse_proxy xx:3000

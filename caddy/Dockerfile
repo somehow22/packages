@@ -23,8 +23,8 @@ RUN xcaddy build \
 FROM --platform=$TARGETPLATFORM caddy:${CADDY_VERSION}-alpine
 COPY --from=builder /usr/bin/caddy /usr/bin/caddy
 
-USER caddy
-EXPOSE 80 443
+USER 10001
+EXPOSE 80 443 8080
 VOLUME /config
 WORKDIR /srv
 
