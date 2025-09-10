@@ -14,7 +14,7 @@ jobs:
     - name: Get current Caddy version
       id: current_version
       run: |
-        CURRENT_VERSION=$(grep "FROM caddy:" caddy/Dockerfile | head -1 | cut -d ':' -f 2 | cut -d '-' -f 1)
+        CURRENT_VERSION=$(grep -E '^ARG CADDY_VERSION=' caddy/Dockerfile | head -1 | cut -d '=' -f2)
         echo "version=${CURRENT_VERSION}" >> $GITHUB_OUTPUT
 
     - name: Check latest Caddy version
@@ -35,8 +35,7 @@ jobs:
     - name: Update Dockerfile
       if: steps.compare.outputs.update_available == 'true'
       run: |
-        sed -i 's/FROM caddy:${{ steps.current_version.outputs.version }}/FROM caddy:${{ steps.latest_version.outputs.version }}/g' caddy/Dockerfile
-        sed -i 's/FROM caddy:${{ steps.current_version.outputs.version }}-alpine/FROM caddy:${{ steps.latest_version.outputs.version }}-alpine/g' caddy/Dockerfile
+        sed -i "s/^ARG CADDY_VERSION=.*/ARG CADDY_VERSION=${{ steps.latest_version.outputs.version }}/" caddy/Dockerfile
 
     - name: Create Pull Request
       if: steps.compare.outputs.update_available == 'true'

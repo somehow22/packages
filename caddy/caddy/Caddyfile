@@ -12,6 +12,7 @@
 
 # Default server block serving files with browsing enabled
 :443 {
+    respond /health 200
     file_server {
         root /usr/share/caddy
         browse

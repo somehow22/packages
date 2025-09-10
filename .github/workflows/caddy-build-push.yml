@@ -38,12 +38,16 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     
-    - name: Get Caddy version
+    - name: Read Caddy version from Dockerfile
       id: caddy_version
       run: |
-        CADDY_VERSION=$(docker run --rm caddy:2-alpine caddy version | cut -d ' ' -f 1)
-        echo "version=${CADDY_VERSION#v}" >> $GITHUB_OUTPUT
-        echo "CADDY_VERSION=${CADDY_VERSION#v}" >> $GITHUB_ENV
+        CADDY_VERSION=$(grep -E '^ARG CADDY_VERSION=' caddy/Dockerfile | head -1 | cut -d '=' -f2)
+        echo "version=${CADDY_VERSION}" >> $GITHUB_OUTPUT
+        echo "CADDY_VERSION=${CADDY_VERSION}" >> $GITHUB_ENV
+
+    - name: Derive major tag
+      run: |
+        echo "CADDY_MAJOR=${CADDY_VERSION%%.*}" >> $GITHUB_ENV
     
     - name: Build and push
       uses: docker/build-push-action@v5
@@ -53,7 +57,9 @@ jobs:
         platforms: linux/amd64,linux/arm64
         push: true
         provenance: false
+        build-args: |
+          CADDY_VERSION=${{ env.CADDY_VERSION }}
         tags: |
           ghcr.io/${{ github.repository_owner }}/caddy:latest
-          ghcr.io/${{ github.repository_owner }}/caddy:2
+          ghcr.io/${{ github.repository_owner }}/caddy:${{ env.CADDY_MAJOR }}
           ghcr.io/${{ github.repository_owner }}/caddy:${{ env.CADDY_VERSION }}

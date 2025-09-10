@@ -1,11 +1,12 @@
-# Update 241004
-FROM --platform=$BUILDPLATFORM caddy:2.8.4-builder-alpine AS builder
+ARG CADDY_VERSION=2.10.2
+
+FROM --platform=$BUILDPLATFORM caddy:${CADDY_VERSION}-builder-alpine AS builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
 RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
 
-# Set GOARCH based on target platform
+# Set GOOS/GOARCH based on target platform
 ARG TARGETOS
 ARG TARGETARCH
 ENV GOOS=$TARGETOS
@@ -19,10 +20,11 @@ RUN xcaddy build \
   --with github.com/mholt/caddy-ratelimit \
   --with github.com/caddyserver/cache-handler
 
-FROM --platform=$TARGETPLATFORM caddy:2-alpine
+FROM --platform=$TARGETPLATFORM caddy:${CADDY_VERSION}-alpine
 COPY --from=builder /usr/bin/caddy /usr/bin/caddy
 
-EXPOSE 80 443 2019
+USER caddy
+EXPOSE 80 443
 VOLUME /config
 WORKDIR /srv
 
