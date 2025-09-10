@@ -1,17 +1,8 @@
 name: Build and Push Katbin Docker Image
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'katbin/**'
-      - '.github/workflows/katbin-build-push.yml'
-  pull_request:
-    branches: [ main ]
-    paths:
-      - 'katbin/**'
-      - '.github/workflows/katbin-build-push.yml'
-  workflow_dispatch:  # Allow manual triggering
+  # Temporarily disabled automatic triggers; manual runs only
+  workflow_dispatch:
 
 jobs:
   build-and-push:

@@ -1,11 +1,7 @@
 name: Build and Push Deepnote Images
 
 on:
-  push:
-    branches: [ "main" ]
-    paths:
-      - 'deepnote/**'
-      - '.github/workflows/deepnote-build.yml'
+  # Temporarily disabled automatic triggers; manual runs only
   workflow_dispatch:
 
 jobs:
