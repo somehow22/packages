@@ -20,8 +20,8 @@ jobs:
       contents: read
       packages: write
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
     
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -48,6 +48,16 @@ jobs:
     - name: Derive major tag
       run: |
         echo "CADDY_MAJOR=${CADDY_VERSION%%.*}" >> $GITHUB_ENV
+
+    - name: Docker metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/${{ github.repository_owner }}/caddy
+        tags: |
+          type=raw,value=latest
+          type=raw,value=${{ env.CADDY_MAJOR }}
+          type=raw,value=${{ env.CADDY_VERSION }}
     
     - name: Build and push
       uses: docker/build-push-action@v5
@@ -56,10 +66,11 @@ jobs:
         file: ./caddy/Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
-        provenance: false
+        provenance: true
+        sbom: true
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
         build-args: |
           CADDY_VERSION=${{ env.CADDY_VERSION }}
-        tags: |
-          ghcr.io/${{ github.repository_owner }}/caddy:latest
-          ghcr.io/${{ github.repository_owner }}/caddy:${{ env.CADDY_MAJOR }}
-          ghcr.io/${{ github.repository_owner }}/caddy:${{ env.CADDY_VERSION }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}

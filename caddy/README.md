@@ -23,12 +23,12 @@ This custom Caddy build includes the following additional modules:
 ## Files
 
 - `Dockerfile`: Defines the custom Caddy build
-- `caddy/Caddyfile`: Configuration file for Caddy
+- `caddy/caddy/Caddyfile`: Configuration file for Caddy
 - `compose.yml`: Compose file for easy deployment
 
 ## Usage
 
-1. Customize `caddy/Caddyfile` to your needs
+1. Customize `caddy/caddy/Caddyfile` to your needs
 2. Build and run with Docker Compose:
 
    - From repo root: `docker compose -f caddy/compose.yml up -d`
