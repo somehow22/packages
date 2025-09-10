@@ -2,15 +2,8 @@ ARG CADDY_VERSION=2.10.2
 
 FROM --platform=$BUILDPLATFORM caddy:${CADDY_VERSION}-builder-alpine AS builder
 
-ARG TARGETPLATFORM
-ARG BUILDPLATFORM
-RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
-
-# Set GOOS/GOARCH based on target platform
-ARG TARGETOS
-ARG TARGETARCH
-ENV GOOS=$TARGETOS
-ENV GOARCH=$TARGETARCH
+ARG TARGETOS TARGETARCH
+ENV GOOS=$TARGETOS GOARCH=$TARGETARCH
 
 RUN xcaddy build \
   --with github.com/caddy-dns/cloudflare \
@@ -20,18 +13,18 @@ RUN xcaddy build \
   --with github.com/mholt/caddy-ratelimit \
   --with github.com/caddyserver/cache-handler
 
+# Runtime (non-root)
 FROM --platform=$TARGETPLATFORM caddy:${CADDY_VERSION}-alpine
 COPY --from=builder /usr/bin/caddy /usr/bin/caddy
 
-# Minimal helper to drop privileges after fixing volume ownership
-RUN apk add --no-cache su-exec
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+# Prepare writable dirs for non-root at build time
+RUN mkdir -p /data /config /srv \
+    && addgroup -S caddy 2>/dev/null || true \
+    && adduser -S -D -H -s /sbin/nologin -G caddy -u 65532 caddy || true \
+    && chown -R 65532:65532 /data /config /srv
 
-USER root
-EXPOSE 80 443 8080
-VOLUME /config
+USER 65532:65532
 WORKDIR /srv
+EXPOSE 18080 18443
 
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
