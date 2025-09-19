@@ -1,5 +1,4 @@
 {
-    # Tell Caddy we use high ports inside the container
     http_port 18080
     https_port 18443
 
