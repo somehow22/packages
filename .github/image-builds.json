@@ -1,0 +1,25 @@
+{
+  "images": [
+    {
+      "image": "caddy",
+      "context": "./caddy",
+      "file": "./caddy/Dockerfile",
+      "platforms": ["linux/amd64", "linux/arm64"],
+      "release": true
+    },
+    {
+      "image": "katbin",
+      "context": "./katbin",
+      "file": "./katbin/Dockerfile",
+      "platforms": ["linux/amd64"],
+      "release": true
+    },
+    {
+      "image": "singbox",
+      "context": "./singbox",
+      "file": "./singbox/Dockerfile",
+      "platforms": ["linux/amd64", "linux/arm64"],
+      "release": true
+    }
+  ]
+}

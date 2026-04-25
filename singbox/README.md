@@ -40,3 +40,24 @@ From the repository root:
 ```sh
 docker buildx build --platform linux/amd64 -t singbox:v2ray-api ./singbox
 ```
+
+For Apple Silicon Docker Desktop, build the Linux ARM64 image:
+
+```sh
+docker buildx build --platform linux/arm64 -t singbox:v2ray-api-arm64 --load ./singbox
+```
+
+## Handoff Note
+
+This image is generic-purpose and does not include Hyperjump configuration.
+
+See `HANDOFF.md` for the short note intended for downstream agents.
+
+Build behavior:
+
+- Clones upstream `SagerNet/sing-box` at `SING_BOX_VERSION`.
+- Uses upstream `release/DEFAULT_BUILD_TAGS_OTHERS`.
+- Adds `with_v2ray_api` so the binary exposes V2Ray API support.
+- Publishes only v2ray-specific tags, for example `ghcr.io/somehow22/singbox:v1.13.11-v2ray-api` and `ghcr.io/somehow22/singbox:latest-v2ray-api`.
+
+Hyperjump should provide its own sing-box JSON config at runtime and pull one of the `*-v2ray-api` tags instead of using a Hyperjump-specific image.

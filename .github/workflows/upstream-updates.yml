@@ -1,0 +1,89 @@
+name: Upstream Updates
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: upstream-updates
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+        with:
+          submodules: recursive
+
+      - name: Configure Git
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "So Jens"
+          git config user.email "149686101+somehow22@users.noreply.github.com"
+
+      - name: Check upstream versions
+        id: upstream
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          changed=0
+          summary_file="$(mktemp)"
+
+          current_caddy="$(grep -E '^ARG CADDY_VERSION=' caddy/Dockerfile | head -1 | cut -d '=' -f2)"
+          latest_caddy="$(curl -fsSL https://api.github.com/repos/caddyserver/caddy/releases/latest | jq -r .tag_name | sed 's/^v//')"
+          if [ -n "$latest_caddy" ] && [ "$latest_caddy" != "null" ] && [ "$current_caddy" != "$latest_caddy" ]; then
+            sed -i "s/^ARG CADDY_VERSION=.*/ARG CADDY_VERSION=${latest_caddy}/" caddy/Dockerfile
+            printf -- "- caddy: %s -> %s\n" "$current_caddy" "$latest_caddy" >> "$summary_file"
+            changed=1
+          fi
+
+          current_singbox="$(grep -E '^ARG SING_BOX_VERSION=' singbox/Dockerfile | head -1 | cut -d '=' -f2)"
+          latest_singbox="$(curl -fsSL https://api.github.com/repos/SagerNet/sing-box/releases/latest | jq -r .tag_name)"
+          if [ -n "$latest_singbox" ] && [ "$latest_singbox" != "null" ] && [ "$current_singbox" != "$latest_singbox" ]; then
+            sed -i "s/^ARG SING_BOX_VERSION=.*/ARG SING_BOX_VERSION=${latest_singbox}/" singbox/Dockerfile
+            printf -- "- sing-box: %s -> %s\n" "$current_singbox" "$latest_singbox" >> "$summary_file"
+            changed=1
+          fi
+
+          current_katbin="$(git -C katbin/source rev-parse HEAD)"
+          git -C katbin/source fetch --depth=1 origin develop
+          latest_katbin="$(git -C katbin/source rev-parse FETCH_HEAD)"
+          if [ "$current_katbin" != "$latest_katbin" ]; then
+            git -C katbin/source checkout --detach "$latest_katbin"
+            printf -- "- katbin/source: %s -> %s\n" "${current_katbin::12}" "${latest_katbin::12}" >> "$summary_file"
+            changed=1
+          fi
+
+          {
+            echo "changed=${changed}"
+            echo "summary<<EOF"
+            cat "$summary_file"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create pull request
+        if: steps.upstream.outputs.changed == '1'
+        uses: peter-evans/create-pull-request@v8.1.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: maintenance/upstream-updates
+          delete-branch: true
+          author: So Jens <149686101+somehow22@users.noreply.github.com>
+          committer: So Jens <149686101+somehow22@users.noreply.github.com>
+          commit-message: "chore: refresh upstream image inputs"
+          title: "chore: refresh upstream image inputs"
+          body: |
+            Daily upstream check found updates:
+
+            ${{ steps.upstream.outputs.summary }}
+
+            CI builds the selected image platforms from `.github/image-builds.json` before merge. Publishing is handled by the manual `Release Images` workflow.

@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/ci.yml"
+      - ".github/image-builds.json"
       - "caddy/**"
       - "katbin/**"
       - "singbox/**"
@@ -12,6 +13,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/ci.yml"
+      - ".github/image-builds.json"
       - "caddy/**"
       - "katbin/**"
       - "singbox/**"
@@ -29,22 +31,29 @@ env:
   DOCKER_BUILD_SUMMARY: "false"
 
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Select images
+        id: matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          matrix="$(jq -c '{include: [.images[] | select(.release == true) | {image, context, file, platforms: (.platforms | join(","))}]}' .github/image-builds.json)"
+          echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+
   docker:
     name: Build ${{ matrix.image }}
+    needs: plan
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - image: caddy
-            context: ./caddy
-            file: ./caddy/Dockerfile
-          - image: katbin
-            context: ./katbin
-            file: ./katbin/Dockerfile
-          - image: singbox
-            context: ./singbox
-            file: ./singbox/Dockerfile
+      matrix: ${{ fromJson(needs.plan.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.2
@@ -81,7 +90,7 @@ jobs:
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.file }}
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platforms }}
           push: false
           provenance: false
           sbom: false

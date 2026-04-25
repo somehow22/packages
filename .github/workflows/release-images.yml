@@ -38,6 +38,13 @@ jobs:
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+        with:
+          sparse-checkout: |
+            .github/image-builds.json
+          sparse-checkout-cone-mode: false
+
       - name: Select images
         id: matrix
         shell: bash
@@ -45,20 +52,15 @@ jobs:
           IMAGE: ${{ inputs.image }}
         run: |
           set -euo pipefail
-          case "$IMAGE" in
-            all)
-              matrix='{"include":[{"image":"caddy","context":"./caddy","file":"./caddy/Dockerfile"},{"image":"katbin","context":"./katbin","file":"./katbin/Dockerfile"},{"image":"singbox","context":"./singbox","file":"./singbox/Dockerfile"}]}'
-              ;;
-            caddy)
-              matrix='{"include":[{"image":"caddy","context":"./caddy","file":"./caddy/Dockerfile"}]}'
-              ;;
-            katbin)
-              matrix='{"include":[{"image":"katbin","context":"./katbin","file":"./katbin/Dockerfile"}]}'
-              ;;
-            singbox)
-              matrix='{"include":[{"image":"singbox","context":"./singbox","file":"./singbox/Dockerfile"}]}'
-              ;;
-          esac
+          if [ "$IMAGE" = "all" ]; then
+            matrix="$(jq -c '{include: [.images[] | select(.release == true) | {image, context, file, platforms: (.platforms | join(","))}]}' .github/image-builds.json)"
+          else
+            matrix="$(jq -c --arg image "$IMAGE" '{include: [.images[] | select(.release == true and .image == $image) | {image, context, file, platforms: (.platforms | join(","))}]}' .github/image-builds.json)"
+          fi
+          if [ "$(jq '.include | length' <<<"$matrix")" -eq 0 ]; then
+            echo "No release image selected" >&2
+            exit 1
+          fi
           echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
 
   publish:
@@ -143,7 +145,7 @@ jobs:
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.file }}
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platforms }}
           push: true
           provenance: mode=max
           sbom: true

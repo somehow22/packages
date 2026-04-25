@@ -23,10 +23,18 @@ Do not update `deepnote` unless the user explicitly asks for it.
 ## Image Conventions
 
 - Publish to `ghcr.io/${{ github.repository_owner }}/<image>`.
+- Keep image contexts, Dockerfiles, and platform lists in `.github/image-builds.json`.
+- Treat `linux/arm64` as the Apple Silicon Docker target; only add it to images that need a Mac/ARM build.
 - Caddy tags: `latest`, major version, exact Caddy version.
 - Katbin tags: `latest`, commit SHA.
 - sing-box tags: `<version>-v2ray-api`, `<version>-v2ray-api-<sha>`, and `latest-v2ray-api` for latest builds.
 - Do not publish plain `singbox:latest` from the v2ray-API build unless the user explicitly changes that policy.
+
+## Workflows
+
+- `CI` builds the configured images and platforms without pushing.
+- `Release Images` is the production publishing path and requires manual dispatch.
+- `Upstream Updates` runs daily and opens a PR when Caddy, sing-box, or the Katbin submodule has moved upstream.
 
 ## Validation
 

@@ -5,16 +5,17 @@ This repository builds a small set of customized public Docker images and publis
 
 Key features:
 1. Build Docker images from versioned source definitions.
-2. Tag images according to stable conventions.
-3. Push images to `ghcr.io`.
-4. Check selected upstream releases and create pull requests.
+2. Keep per-image platform lists in `.github/image-builds.json`.
+3. Tag images according to stable conventions.
+4. Push images to `ghcr.io`.
+5. Check selected upstream releases and create pull requests.
 
 
 ## Architecture
 
 ```mermaid
 graph TD
-    A[Dependabot checks base images and actions] -->|Creates PR| B[Review and merge updates]
+    A[Dependabot checks GitHub Actions] -->|Creates PR| B[Review and merge updates]
     C[Daily upstream check] -->|Runs daily| D{New version available?}
     D -->|Yes| E[Create PR]
     D -->|No| F[No action needed]
@@ -42,10 +43,18 @@ Generic sing-box image built from upstream source with the v2ray API build tag e
 Legacy image definitions are still present but intentionally not maintained in this refresh.
 
 ## Update Process
-1. Daily automatic checks for upstream updates
-2. Creation of pull requests for new versions
-3. Manual review and merge of update PRs
-4. Automatic build and push of updated images to GHCR
+1. Daily automatic checks for Caddy releases, sing-box releases, and the Katbin source submodule.
+2. Creation of pull requests for changed upstream inputs.
+3. Manual review and merge of update PRs after CI passes.
+4. Manual production release through the `Release Images` workflow.
+
+## Platform Policy
+
+The build platform list is intentionally configurable per image in `.github/image-builds.json`.
+
+- `linux/amd64` is the default production target.
+- `linux/arm64` is the Apple Silicon Docker target.
+- Katbin currently builds only `linux/amd64`; add `linux/arm64` to its `platforms` list when an ARM build is needed.
 
 ## Usage
 This repository is public, but the images are primarily maintained for personal infrastructure. Runtime configuration and secrets are not included in the images.
