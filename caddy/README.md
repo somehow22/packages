@@ -5,6 +5,7 @@ This directory contains the configuration for a custom Caddy server build, part 
 ## Features
 
 - Custom Caddy build with additional modules
+- Distroless non-root runtime image
 - Automatic HTTPS
 - HTTP/3 support
 - Reverse proxy capabilities
@@ -56,13 +57,28 @@ For direct public Cloudflare proxy traffic, use explicit Cloudflare CIDRs or add
    - From repo root: `docker compose -f caddy/compose.yml up -d`
    - From `caddy/` dir: `docker compose up -d`
 3. Health check endpoints:
-   - Plain HTTP: `http://localhost:8080/health` (for probes)
-   - HTTPS: `https://localhost/health` (cert-validation off in compose healthcheck)
+   - Plain HTTP: `http://localhost/health` (for probes)
+   - HTTPS: `https://localhost/health`
+
+## Compose Hardening
+
+The sample Compose service runs with:
+
+- Non-root UID/GID `65532:65532`
+- A distroless runtime image with no shell or package manager
+- Read-only root filesystem
+- Dropped Linux capabilities
+- `no-new-privileges`
+- Explicit writable volumes for `/data` and `/config`
+- `nofile` ulimit for reverse-proxy workloads
+- Rotated Docker logs and rotated Caddy file access logs
+
+Because the runtime is distroless, the Compose healthcheck cannot use shell tools such as `wget`. It validates the loaded Caddyfile with the Caddy binary. Use the exposed `/health`, `/livez`, and `/readyz` endpoints from the host or an external monitor for end-to-end serving checks.
 
 ## Kubernetes
 
 - Admin API: disabled by default. Keep off in production. If needed, bind to localhost only and access via `kubectl exec`/`port-forward`.
-- Health checks: use plain HTTP on port `8080` inside the Pod (not exposed via Service).
+- Health checks: use plain HTTP on port `18080` inside the Pod.
 - Storage: `/data` (certs) and `/config` (autosave) stored on dedicated volumes; readable only by the Caddy process user.
 
 Recommended spec highlights
@@ -79,9 +95,9 @@ Recommended spec highlights
     - `sh -lc 'mkdir -p /data /config && chown -R 65532:65532 /data /config && chmod -R go-rwx /data /config && find /data /config -type d -exec chmod 0700 {} + && find /data /config -type f -exec chmod 0600 {} +'`
   - mounts: same `/data`, `/config` PVCs
 - Probes (example):
-  - readinessProbe: HTTP GET `/health` on port `8080`
-  - livenessProbe: HTTP GET `/health` on port `8080`
-- Service: expose only `80` and `443`; do not expose `8080`.
+  - readinessProbe: HTTP GET `/health` on port `18080`
+  - livenessProbe: HTTP GET `/health` on port `18080`
+- Service: expose only `80` and `443`.
 
 Image alignment between Docker and Kubernetes
 - The image runs as UID/GID `65532`.

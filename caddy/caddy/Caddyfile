@@ -7,7 +7,11 @@
 
 	# File access log
 	log {
-		output file /data/access.log
+		output file /data/access.log {
+			roll_size 10MiB
+			roll_keep 5
+			roll_keep_for 720h
+		}
 		level INFO
 	}
 
@@ -21,13 +25,13 @@
 :18443 {
 	respond /health 200
 	file_server {
-		root /usr/share/caddy
+		root /srv
 		browse
 	}
 }
 
-# Plain HTTP health endpoints for k8s probes (no TLS)
-:8080 {
+# Plain HTTP health endpoints for probes (no TLS)
+:18080 {
 	respond /health 200
 	respond /livez 200
 	respond /readyz 200

@@ -5,13 +5,24 @@ services:
       context: .
       dockerfile: Dockerfile
     image: ghcr.io/somehow22/caddy:${VERSION:-latest}
-    container_name: caddy
     restart: unless-stopped
     user: "65532:65532"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=32m
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
     logging:
       driver: "json-file"
       options:
         max-size: "5m"
+        max-file: "3"
     sysctls:
       net.core.rmem_max: 2500000
       net.core.wmem_max: 2500000
@@ -21,12 +32,11 @@ services:
       # If you enabled h3 in Caddyfile's 'servers { protocols h1 h2 h3 }'
       - "443:18443/udp"
     volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy:/etc/caddy:ro
       - caddy_data:/data
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
+      - caddy_config:/config
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O- http://localhost:8080/health >/dev/null 2>&1 || exit 1"]
+      test: ["CMD", "/usr/bin/caddy", "validate", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -34,3 +44,4 @@ services:
 
 volumes:
   caddy_data: {}
+  caddy_config: {}
