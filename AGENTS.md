@@ -35,6 +35,7 @@ Do not update `deepnote` unless the user explicitly asks for it.
 - `CI` builds the configured images and platforms without pushing.
 - `Release Images` is the production publishing path and requires manual dispatch.
 - `Upstream Updates` runs daily and opens a PR when Caddy, sing-box, or the Katbin submodule has moved upstream.
+- `Package Retention` is manual and deletes old GHCR package versions only when dispatched with `dry_run=false`.
 
 ## Validation
 

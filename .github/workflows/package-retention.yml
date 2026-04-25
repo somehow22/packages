@@ -1,0 +1,110 @@
+name: Package Retention
+
+on:
+  workflow_dispatch:
+    inputs:
+      older_than_days:
+        description: Delete package versions older than this many days
+        required: true
+        default: "183"
+      dry_run:
+        description: Report deletions without deleting
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+      package_names:
+        description: Comma-separated GHCR package names, or auto
+        required: true
+        default: auto
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: package-retention
+  cancel-in-progress: false
+
+jobs:
+  delete-old-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+        with:
+          sparse-checkout: |
+            .github/image-builds.json
+          sparse-checkout-cone-mode: false
+
+      - name: Delete old package versions
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OWNER: ${{ github.repository_owner }}
+          REPOSITORY: ${{ github.repository }}
+          OLDER_THAN_DAYS: ${{ inputs.older_than_days }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          PACKAGE_NAMES: ${{ inputs.package_names }}
+        run: |
+          set -euo pipefail
+
+          cutoff="$(date -u -d "${OLDER_THAN_DAYS} days ago" +%Y-%m-%dT%H:%M:%SZ)"
+          echo "Cutoff: ${cutoff}"
+          echo "Dry run: ${DRY_RUN}"
+
+          package_file="$(mktemp)"
+          if [ "$PACKAGE_NAMES" = "auto" ]; then
+            jq -r '.images[].image' .github/image-builds.json > "$package_file"
+            gh api --paginate "/users/${OWNER}/packages?package_type=container&per_page=100" \
+              --jq ".[] | select(.repository.full_name == \"${REPOSITORY}\") | .name" >> "$package_file" || true
+          else
+            tr ',' '\n' <<<"$PACKAGE_NAMES" | sed 's/^ *//;s/ *$//' > "$package_file"
+          fi
+          sort -u "$package_file" -o "$package_file"
+
+          deleted=0
+          kept=0
+          candidates=0
+          echo "Packages:"
+          sed 's/^/- /' "$package_file"
+
+          while IFS= read -r package_name; do
+            [ -n "$package_name" ] || continue
+            if ! version_rows="$(gh api --paginate "/users/${OWNER}/packages/container/${package_name}/versions?per_page=100" \
+              --jq '.[] | [.id, .created_at, ((.metadata.container.tags // []) | join(","))] | @tsv')"; then
+              echo "::warning::Could not list versions for ${package_name}; skipping"
+              continue
+            fi
+
+            if [ -z "$version_rows" ]; then
+              echo "${package_name}: no versions"
+              continue
+            fi
+
+            while IFS=$'\t' read -r id created_at tags; do
+              [ -n "$id" ] || continue
+              if [[ "$created_at" < "$cutoff" ]]; then
+                candidates=$((candidates + 1))
+                echo "delete ${package_name} version ${id} created ${created_at} tags=[${tags}]"
+                if [ "$DRY_RUN" = "false" ]; then
+                  gh api --method DELETE "/users/${OWNER}/packages/container/${package_name}/versions/${id}"
+                  deleted=$((deleted + 1))
+                fi
+              else
+                kept=$((kept + 1))
+              fi
+            done <<< "$version_rows"
+          done < "$package_file"
+
+          {
+            echo "### Package retention"
+            echo
+            echo "- Cutoff: \`${cutoff}\`"
+            echo "- Dry run: \`${DRY_RUN}\`"
+            echo "- Delete candidates: \`${candidates}\`"
+            echo "- Deleted: \`${deleted}\`"
+            echo "- Kept newer versions: \`${kept}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
