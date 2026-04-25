@@ -15,12 +15,33 @@ This directory contains the configuration for a custom Caddy server build, part 
 
 This custom Caddy build includes the following additional modules:
 
-- github.com/mholt/caddy-events-exec
-- github.com/mholt/caddy-l4
-- github.com/mholt/caddy-ratelimit
-- github.com/caddyserver/cache-handler
-- github.com/caddy-dns/cloudflare
-- github.com/WeidiDeng/caddy-cloudflare-ip
+- `github.com/caddy-dns/cloudflare` for ACME DNS-01 with Cloudflare.
+- `github.com/mholt/caddy-l4` for TCP/UDP layer 4 routing.
+- `github.com/mholt/caddy-ratelimit` for HTTP rate limiting.
+- `github.com/caddyserver/cache-handler` for HTTP response caching.
+
+Removed modules:
+
+- `github.com/WeidiDeng/caddy-cloudflare-ip`: redundant for this image. Caddy now has standard `trusted_proxies`, `client_ip_headers`, `client_ip`, and `{client_ip}` support. Use static trusted proxies or add a CDN range module only when a deployment needs dynamic CDN IP lists.
+- `github.com/mholt/caddy-events-exec`: not used by the sample config, experimental, and expands the image's command-execution surface. Caddy's core `events` app remains available, but this image no longer ships the external `exec` event handler.
+
+See `MODULES.md` for the current module audit.
+
+## Client IP Behind Proxies
+
+For private ingress, tunnels, or another reverse proxy in front of Caddy, prefer Caddy's built-in server options:
+
+```caddyfile
+{
+    servers {
+        trusted_proxies static private_ranges
+        trusted_proxies_strict
+        client_ip_headers X-Forwarded-For X-Real-IP Cf-Connecting-Ip
+    }
+}
+```
+
+For direct public Cloudflare proxy traffic, use explicit Cloudflare CIDRs or add a dedicated CDN range module in a future change. This image intentionally avoids baking a Cloudflare-specific IP range module.
 
 ## Files
 

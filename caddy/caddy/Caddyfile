@@ -1,39 +1,39 @@
 {
-    http_port 18080
-    https_port 18443
+	http_port 18080
+	https_port 18443
 
-    # Keep admin off for prod (enable localhost:2019 in dev if needed)
-    admin off
+	# Keep admin off for prod (enable localhost:2019 in dev if needed)
+	admin off
 
-    # File access log
-    log {
-        output file /data/access.log
-        level INFO
-    }
+	# File access log
+	log {
+		output file /data/access.log
+		level INFO
+	}
 
-    # Enable HTTP/1.1, HTTP/2, and (optionally) HTTP/3
-    servers :18443 {
-        protocols h1 h2 h3
-    }
+	# Enable HTTP/1.1, HTTP/2, and (optionally) HTTP/3
+	servers :18443 {
+		protocols h1 h2 h3
+	}
 }
 
 # TLS site on the container's HTTPS port
 :18443 {
-    respond /health 200
-    file_server {
-        root /usr/share/caddy
-        browse
-    }
+	respond /health 200
+	file_server {
+		root /usr/share/caddy
+		browse
+	}
 }
 
 # Plain HTTP health endpoints for k8s probes (no TLS)
 :8080 {
-    respond /health 200
-    respond /livez 200
-    respond /readyz 200
+	respond /health 200
+	respond /livez 200
+	respond /readyz 200
 }
 
 # Your domain (auto-HTTPS via ACME)
 xx.example.com {
-    reverse_proxy xx:3000
+	reverse_proxy xx:3000
 }

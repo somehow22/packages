@@ -7,8 +7,6 @@ ENV GOOS=$TARGETOS GOARCH=$TARGETARCH
 
 RUN xcaddy build \
   --with github.com/caddy-dns/cloudflare \
-  --with github.com/WeidiDeng/caddy-cloudflare-ip \
-  --with github.com/mholt/caddy-events-exec \
   --with github.com/mholt/caddy-l4 \
   --with github.com/mholt/caddy-ratelimit \
   --with github.com/caddyserver/cache-handler
