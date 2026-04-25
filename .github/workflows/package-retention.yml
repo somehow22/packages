@@ -58,8 +58,12 @@ jobs:
           package_file="$(mktemp)"
           if [ "$PACKAGE_NAMES" = "auto" ]; then
             jq -r '.images[].image' .github/image-builds.json > "$package_file"
-            gh api --paginate "/users/${OWNER}/packages?package_type=container&per_page=100" \
-              --jq ".[] | select(.repository.full_name == \"${REPOSITORY}\") | .name" >> "$package_file" || true
+            if extra_packages="$(gh api --paginate "/users/${OWNER}/packages?package_type=container&per_page=100" \
+              --jq ".[] | select(.repository.full_name == \"${REPOSITORY}\") | .name" 2>/dev/null)"; then
+              printf '%s\n' "$extra_packages" >> "$package_file"
+            else
+              echo "::warning::Could not list repository-linked packages; falling back to .github/image-builds.json"
+            fi
           else
             tr ',' '\n' <<<"$PACKAGE_NAMES" | sed 's/^ *//;s/ *$//' > "$package_file"
           fi
@@ -68,6 +72,7 @@ jobs:
           deleted=0
           kept=0
           candidates=0
+          failed=0
           echo "Packages:"
           sed 's/^/- /' "$package_file"
 
@@ -90,8 +95,12 @@ jobs:
                 candidates=$((candidates + 1))
                 echo "delete ${package_name} version ${id} created ${created_at} tags=[${tags}]"
                 if [ "$DRY_RUN" = "false" ]; then
-                  gh api --method DELETE "/users/${OWNER}/packages/container/${package_name}/versions/${id}"
-                  deleted=$((deleted + 1))
+                  if gh api --method DELETE "/users/${OWNER}/packages/container/${package_name}/versions/${id}"; then
+                    deleted=$((deleted + 1))
+                  else
+                    failed=$((failed + 1))
+                    echo "::warning::Could not delete ${package_name} version ${id}"
+                  fi
                 fi
               else
                 kept=$((kept + 1))
@@ -106,5 +115,6 @@ jobs:
             echo "- Dry run: \`${DRY_RUN}\`"
             echo "- Delete candidates: \`${candidates}\`"
             echo "- Deleted: \`${deleted}\`"
+            echo "- Failed deletions: \`${failed}\`"
             echo "- Kept newer versions: \`${kept}\`"
           } >> "$GITHUB_STEP_SUMMARY"
