@@ -1,0 +1,162 @@
+name: Release Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: Image to publish
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - caddy
+          - katbin
+          - singbox
+      sing_box_version:
+        description: sing-box git tag or latest
+        required: true
+        default: latest
+
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
+concurrency:
+  group: release-images
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  DOCKER_BUILD_RECORD_UPLOAD: "false"
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - name: Select images
+        id: matrix
+        shell: bash
+        env:
+          IMAGE: ${{ inputs.image }}
+        run: |
+          set -euo pipefail
+          case "$IMAGE" in
+            all)
+              matrix='{"include":[{"image":"caddy","context":"./caddy","file":"./caddy/Dockerfile"},{"image":"katbin","context":"./katbin","file":"./katbin/Dockerfile"},{"image":"singbox","context":"./singbox","file":"./singbox/Dockerfile"}]}'
+              ;;
+            caddy)
+              matrix='{"include":[{"image":"caddy","context":"./caddy","file":"./caddy/Dockerfile"}]}'
+              ;;
+            katbin)
+              matrix='{"include":[{"image":"katbin","context":"./katbin","file":"./katbin/Dockerfile"}]}'
+              ;;
+            singbox)
+              matrix='{"include":[{"image":"singbox","context":"./singbox","file":"./singbox/Dockerfile"}]}'
+              ;;
+          esac
+          echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+
+  publish:
+    name: Publish ${{ matrix.image }}
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: production
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.plan.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+        with:
+          submodules: recursive
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4.0.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.0.0
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4.1.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve image metadata
+        id: meta
+        shell: bash
+        env:
+          OWNER: ${{ github.repository_owner }}
+          IMAGE: ${{ matrix.image }}
+          REQUESTED_SING_BOX_VERSION: ${{ inputs.sing_box_version }}
+        run: |
+          set -euo pipefail
+          short_sha="${GITHUB_SHA::12}"
+          case "$IMAGE" in
+            caddy)
+              caddy_version="$(grep -E '^ARG CADDY_VERSION=' caddy/Dockerfile | head -1 | cut -d '=' -f2)"
+              caddy_major="${caddy_version%%.*}"
+              image_ref="${REGISTRY}/${OWNER}/caddy"
+              {
+                printf 'build_args<<EOF\nCADDY_VERSION=%s\nEOF\n' "$caddy_version"
+                printf 'tags<<EOF\n%s:latest\n%s:%s\n%s:%s\nEOF\n' "$image_ref" "$image_ref" "$caddy_major" "$image_ref" "$caddy_version"
+              } >> "$GITHUB_OUTPUT"
+              ;;
+            katbin)
+              image_ref="${REGISTRY}/${OWNER}/katbin"
+              {
+                printf 'build_args=\n'
+                printf 'tags<<EOF\n%s:latest\n%s:%s\nEOF\n' "$image_ref" "$image_ref" "$short_sha"
+              } >> "$GITHUB_OUTPUT"
+              ;;
+            singbox)
+              requested="${REQUESTED_SING_BOX_VERSION:-latest}"
+              if [ "$requested" = "latest" ]; then
+                version="$(curl -fsSL https://api.github.com/repos/SagerNet/sing-box/releases/latest | jq -r '.tag_name')"
+              else
+                version="$requested"
+              fi
+              if [ -z "$version" ] || [ "$version" = "null" ]; then
+                echo "Could not resolve sing-box version" >&2
+                exit 1
+              fi
+              image_ref="${REGISTRY}/${OWNER}/singbox"
+              {
+                printf 'build_args<<EOF\nSING_BOX_VERSION=%s\nEOF\n' "$version"
+                printf 'tags<<EOF\n%s:%s-v2ray-api\n%s:%s-v2ray-api-%s\n' "$image_ref" "$version" "$image_ref" "$version" "$short_sha"
+                if [ "$requested" = "latest" ]; then
+                  printf '%s:latest-v2ray-api\n' "$image_ref"
+                fi
+                printf 'EOF\n'
+              } >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+      - name: Build and publish
+        uses: docker/build-push-action@v7.1.0
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,scope=${{ matrix.image }},mode=max
+          build-args: ${{ steps.meta.outputs.build_args }}
+          tags: ${{ steps.meta.outputs.tags }}
+
+      - name: Summary
+        shell: bash
+        run: |
+          {
+            echo "### Published ${{ matrix.image }}"
+            echo
+            echo '${{ steps.meta.outputs.tags }}' | sed 's/^/- /'
+          } >> "$GITHUB_STEP_SUMMARY"
