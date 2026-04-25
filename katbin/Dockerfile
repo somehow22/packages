@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM node:22-bookworm-slim AS node
+FROM --platform=$BUILDPLATFORM node:25-bookworm-slim AS node
 FROM --platform=$BUILDPLATFORM rust:1.70-bookworm AS rust
 
 FROM --platform=$BUILDPLATFORM elixir:1.14.5-otp-26-slim AS build
