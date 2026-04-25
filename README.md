@@ -46,7 +46,7 @@ Legacy image definitions are still present but intentionally not maintained in t
 1. Daily automatic checks for Caddy releases, sing-box releases, and the Katbin source submodule.
 2. Creation of pull requests for changed upstream inputs.
 3. Manual review and merge of update PRs after CI passes.
-4. Manual production release through the `Release Images` workflow.
+4. Manual production release through the `Release Images` workflow. Published image indexes contain runnable OS/architecture manifests only.
 5. Manual GHCR retention cleanup through the `Package Retention` workflow.
 
 ## Platform Policy
