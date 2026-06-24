@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -71,6 +72,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Create pull request
+        id: cpr
         if: steps.upstream.outputs.changed == '1'
         uses: peter-evans/create-pull-request@v8.1.1
         with:
@@ -87,3 +89,13 @@ jobs:
             ${{ steps.upstream.outputs.summary }}
 
             CI builds the selected image platforms from `.github/image-builds.json` before merge. Publishing is handled by the manual `Release Images` workflow.
+
+      - name: Run CI for update branch
+        if: steps.cpr.outputs.pull-request-operation == 'created' || steps.cpr.outputs.pull-request-operation == 'updated'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_BRANCH: ${{ steps.cpr.outputs.pull-request-branch }}
+        run: |
+          set -euo pipefail
+          gh workflow run ci.yml --ref "$PR_BRANCH"
