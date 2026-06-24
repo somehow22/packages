@@ -38,10 +38,6 @@ A pastebin service written in Elixir. The app source is tracked as a submodule a
 
 Generic sing-box image built from upstream source with the v2ray API build tag enabled. Tags use the `*-v2ray-api` suffix. See `singbox/README.md`.
 
-### Deepnote
-
-Legacy image definitions are still present but intentionally not maintained in this refresh.
-
 ## Update Process
 1. Daily automatic checks for Caddy releases, sing-box releases, and the Katbin source submodule.
 2. Creation of pull requests for changed upstream inputs.
