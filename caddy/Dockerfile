@@ -1,4 +1,4 @@
-ARG CADDY_VERSION=2.11.2
+ARG CADDY_VERSION=2.11.9
 
 FROM --platform=$BUILDPLATFORM caddy:${CADDY_VERSION}-builder-alpine AS builder
 
